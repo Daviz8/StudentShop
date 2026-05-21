@@ -1,7 +1,6 @@
-import { auth } from "../lib/auth";
 import Link from "next/link";
 import ProductCard from "../components/ProductCard";
-import { Lock } from "lucide-react";
+import { getCurrentUser } from "../lib/getCurrentUser";
 
 async function getProducts() {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
@@ -18,35 +17,7 @@ async function getProducts() {
 }
 
 export default async function StorePage() {
-  const session = await auth;
-
-  if (!session) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-[#FFC107]/10 px-6">
-        <section className="max-w-md rounded-[2rem] bg-white p-8 text-center shadow-xl">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-black text-[#FFC107]">
-            <Lock size={30} />
-          </div>
-
-          <h1 className="mt-5 text-3xl font-black text-black">
-            Sign up to use the store
-          </h1>
-
-          <p className="mt-3 text-black/60">
-            You need to create an account before buying gadgets, adding items to
-            cart, or checking out.
-          </p>
-
-          <Link
-            href="/signup"
-            className="mt-6 inline-flex w-full justify-center rounded-2xl bg-[#FFA500] px-6 py-4 font-black text-black hover:bg-[#FFC107]"
-          >
-            Sign up now
-          </Link>
-        </section>
-      </main>
-    );
-  }
+  const user = await getCurrentUser();
 
   const products = await getProducts();
 
@@ -54,43 +25,87 @@ export default async function StorePage() {
     <main className="min-h-screen bg-white">
       <section className="bg-black px-6 py-16 text-white">
         <div className="mx-auto max-w-7xl">
-          <p className="text-sm font-black uppercase tracking-[0.3em] text-[#FFC107]">
-            The best Student Store
-          </p>
+          <div className="flex flex-col gap-8 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="text-sm font-black uppercase tracking-[0.3em] text-[#FFC107]">
+                Student Shop
+              </p>
 
-          <h1 className="mt-3 text-5xl font-black">Available Gadgets and Items</h1>
+              <h1 className="mt-3 text-4xl font-black md:text-5xl">
+                Available Gadgets
+              </h1>
 
-          <p className="mt-3 text-white/60">
-            Welcome, {session.user?.name || session.user?.email}
-          </p>
+              <p className="mt-3 text-white/60">
+                {user
+                  ? `Welcome ${user.name}`
+                  : "Browse gadgets and sign in to buy or sell"}
+              </p>
+            </div>
 
-          <div className="mt-6 flex gap-3">
-            <Link
-              href="/cart"
-              className="rounded-full bg-[#FFA500] px-5 py-3 font-black text-black hover:bg-[#FFC107]"
-            >
-              View Cart
-            </Link>
+            {!user ? (
+              <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+                <Link
+                  href="/signin"
+                  className="w-full rounded-full border border-white px-6 py-3 text-center font-black transition hover:bg-white hover:text-black sm:w-auto"
+                >
+                  Sign In
+                </Link>
 
-            <Link
-              href="/sell"
-              className="rounded-full border border-white/20 px-5 py-3 font-black text-white hover:bg-white hover:text-black"
-            >
-              Sell 
-            </Link>
+                <Link
+                  href="/signup"
+                  className="w-full rounded-full bg-[#FFA500] px-6 py-3 text-center font-black text-black transition hover:bg-[#FFC107] sm:w-auto"
+                >
+                  Sign Up
+                </Link>
+              </div>
+            ) : (
+              <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+                <Link
+                  href="/cart"
+                  className="w-full rounded-full bg-[#FFA500] px-6 py-3 text-center font-black text-black transition hover:bg-[#FFC107] sm:w-auto"
+                >
+                  Cart
+                </Link>
+
+                <Link
+                  href="/sell"
+                  className="w-full rounded-full border border-white px-6 py-3 text-center font-black transition hover:bg-white hover:text-black sm:w-auto"
+                >
+                  Sell
+                </Link>
+
+                <form action="/api/auth/logout" method="POST">
+                  <button className="w-full rounded-full border border-white/30 px-6 py-3 text-center font-black transition hover:bg-white hover:text-black sm:w-auto">
+                    Logout
+                  </button>
+                </form>
+              </div>
+            )}
           </div>
         </div>
       </section>
 
       <section className="mx-auto max-w-7xl px-6 py-12">
+        {!user && (
+          <div className="mb-8 rounded-3xl bg-[#FFC107]/20 p-6">
+            <p className="font-bold text-black">
+              Sign in to add products to cart, checkout or sell items.
+            </p>
+          </div>
+        )}
+
         {products.length === 0 ? (
           <div className="rounded-3xl bg-[#FFC107]/10 p-10 text-center">
-            <p className="font-bold text-black">No products available yet.</p>
+            <p className="font-bold">No products available</p>
           </div>
         ) : (
-          <div className="grid gap-6 md:grid-cols-3 xl:grid-cols-4">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {products.map((product) => (
-              <ProductCard key={product._id} product={product} />
+              <ProductCard
+                key={product._id}
+                product={product}
+                isAuthenticated={!!user}
+              />
             ))}
           </div>
         )}
