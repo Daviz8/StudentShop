@@ -3,13 +3,18 @@
 import { ShoppingCart } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-export default function ProductCard({ product }) {
+export default function ProductCard({ product, isAuthenticated }) {
   const router = useRouter();
 
   const image =
     product.images?.[0]?.url || product.images?.[0] || "/placeholder.png";
 
   const addToCart = () => {
+    if (!isAuthenticated) {
+      router.push("/signin");
+      return;
+    }
+
     const currentCart = JSON.parse(localStorage.getItem("cart") || "[]");
 
     const productId = product._id.toString();
@@ -83,7 +88,7 @@ export default function ProductCard({ product }) {
           className="inline-flex items-center gap-2 rounded-full bg-[#FFA500] px-5 py-3 text-sm font-black text-black hover:bg-[#FFC107] disabled:opacity-50"
         >
           <ShoppingCart size={16} />
-          Add
+          {isAuthenticated ? "Add" : "Sign in"}
         </button>
       </div>
     </div>

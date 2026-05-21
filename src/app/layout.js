@@ -1,8 +1,8 @@
 import { Geist, Geist_Mono, Montserrat } from "next/font/google";
 import "./globals.css";
 
-import Providers from "./components/Provider";
 import Navbar from "./components/Navbar";
+import GoogleOAuthProviderWrapper from "./components/GoogleOAuthProviderWrapper";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -22,35 +22,29 @@ const montserrat = Montserrat({
 export const metadata = {
   title: "Student Shop Nigeria",
   description:
-    "Buy and sell gadgets with live stock tracking and secure checkout",
+    "Buy and sell items with live stock tracking and secure checkout",
 };
 
-export default function RootLayout({
-  children,
-}) {
+export default function RootLayout({ children }) {
   return (
     <html
       lang="en"
       className={`
-      ${geistSans.variable}
-      ${geistMono.variable}
-      ${montserrat.variable}
-      h-full
-      antialiased
+        ${geistSans.variable}
+        ${geistMono.variable}
+        ${montserrat.variable}
+        h-full
+        antialiased
       `}
     >
-      <body className="min-h-screen bg-[#FFFFFF]">
-
-        <Providers>
-
+      <body className="min-h-screen bg-[#FFFFFF] flex flex-col">
+<GoogleOAuthProviderWrapper> 
           <Navbar />
-
-          <main className="flex-1">
+          {/* Main app area */}
+          <main className="flex-1 w-full">
             {children}
           </main>
-
-        </Providers>
-
+</GoogleOAuthProviderWrapper>
       </body>
     </html>
   );
