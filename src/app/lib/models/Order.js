@@ -2,13 +2,26 @@ import mongoose from "mongoose";
 
 const OrderItemSchema = new mongoose.Schema(
   {
+    itemType: {
+      type: String,
+      enum: ["product", "property"],
+      default: "product",
+    },
+
     product: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Product",
-      required: true,
     },
 
-    name: String,
+    property: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Property",
+    },
+
+    name: {
+      type: String,
+      required: true,
+    },
 
     quantity: {
       type: Number,
@@ -37,6 +50,7 @@ const OrderSchema = new mongoose.Schema(
 
     customerEmail: {
       type: String,
+      default: "",
     },
 
     items: {

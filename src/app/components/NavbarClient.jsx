@@ -1,12 +1,25 @@
 "use client";
 
 import Link from "next/link";
-import { Menu, X, ShoppingCart, LogOut, UserRound } from "lucide-react";
+import {
+  Bell,
+  CalendarDays,
+  CheckCircle2,
+  Clock,
+  LogOut,
+  Menu,
+  MessageSquare,
+  ShoppingCart,
+  UserRound,
+  X,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 export default function NavbarClient({ user }) {
   const [open, setOpen] = useState(false);
+  const [notificationOpen, setNotificationOpen] = useState(false);
+  const [requests, setRequests] = useState([]);
   const router = useRouter();
 
   const isLoggedIn = !!user;
@@ -21,8 +34,76 @@ export default function NavbarClient({ user }) {
     });
 
     setOpen(false);
+    setNotificationOpen(false);
     router.push("/signin");
     router.refresh();
+  };
+
+  const loadNotifications = async () => {
+    if (!isLoggedIn) return;
+
+    try {
+      const res = await fetch("/api/user-sales/mine", {
+        cache: "no-store",
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        setRequests(data.requests || []);
+      }
+    } catch (error) {
+      console.error("LOAD_NOTIFICATIONS_ERROR:", error);
+    }
+  };
+
+  useEffect(() => {
+    loadNotifications();
+  }, [isLoggedIn]);
+
+  const notifications = useMemo(() => {
+    return requests.map((request) => {
+      const latestOffer =
+        request.negotiations?.length > 0
+          ? request.negotiations[request.negotiations.length - 1]
+          : null;
+
+      const hasPendingOffer = latestOffer?.sellerResponse === "pending";
+
+      const hasAppointment =
+        request.appointment?.date &&
+        ["appointment_scheduled", "inspection_passed", "bought"].includes(
+          request.status
+        );
+
+      return {
+        id: request._id,
+        title: request.gadgetName,
+        status: request.status,
+        latestOffer,
+        hasPendingOffer,
+        hasAppointment,
+        appointment: request.appointment,
+        createdAt: request.createdAt,
+      };
+    });
+  }, [requests]);
+
+  const unreadCount = notifications.filter(
+    (item) => item.hasPendingOffer || item.hasAppointment
+  ).length;
+
+  const formatMoney = (value) => {
+    return `₦${Number(value || 0).toLocaleString()}`;
+  };
+
+  const formatDate = (value) => {
+    if (!value) return "No date yet";
+
+    return new Date(value).toLocaleString("en-NG", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    });
   };
 
   return (
@@ -32,7 +113,6 @@ export default function NavbarClient({ user }) {
           Student<span className="text-[#FFA500]">Shop</span>
         </Link>
 
-        {/* Desktop Navigation */}
         <div className="hidden items-center gap-8 md:flex">
           <Link
             href="/"
@@ -49,6 +129,13 @@ export default function NavbarClient({ user }) {
           </Link>
 
           <Link
+            href="/properties"
+            className="font-semibold text-black transition hover:text-[#FFA500]"
+          >
+            Properties
+          </Link>
+
+          <Link
             href="/contact"
             className="font-semibold text-black transition hover:text-[#FFA500]"
           >
@@ -62,6 +149,141 @@ export default function NavbarClient({ user }) {
             >
               Sell
             </Link>
+          )}
+
+          {isLoggedIn && (
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => {
+                  setNotificationOpen((prev) => !prev);
+                  loadNotifications();
+                }}
+                className="relative flex h-11 w-11 items-center justify-center rounded-full border border-black/10 text-black transition hover:bg-[#FFC107]/20"
+              >
+                <Bell size={20} />
+
+                {unreadCount > 0 && (
+                  <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-black text-white">
+                    {unreadCount}
+                  </span>
+                )}
+              </button>
+
+              {notificationOpen && (
+                <div className="absolute right-0 top-14 w-[380px] overflow-hidden rounded-[1.5rem] border border-black/10 bg-white shadow-2xl">
+                  <div className="flex items-center justify-between border-b border-black/10 px-5 py-4">
+                    <div>
+                      <h3 className="font-black text-black">Notifications</h3>
+                      <p className="text-xs font-semibold text-black/50">
+                        Admin offers and inspection schedules
+                      </p>
+                    </div>
+
+                    <Link
+                      href="/my-requests"
+                      onClick={() => setNotificationOpen(false)}
+                      className="text-xs font-black text-[#e09200]"
+                    >
+                      View all
+                    </Link>
+                  </div>
+
+                  <div className="max-h-[420px] overflow-y-auto">
+                    {notifications.length === 0 ? (
+                      <div className="p-6 text-center">
+                        <Clock className="mx-auto text-black/30" size={32} />
+
+                        <p className="mt-3 text-sm font-bold text-black">
+                          No notifications yet
+                        </p>
+
+                        <p className="mt-1 text-xs text-black/50">
+                          Admin offers and schedules will appear here.
+                        </p>
+                      </div>
+                    ) : (
+                      notifications.slice(0, 5).map((item) => (
+                        <Link
+                          key={item.id}
+                          href={`/sell-requests/${item.id}`}
+                          onClick={() => setNotificationOpen(false)}
+                          className="block border-b border-black/5 p-5 transition hover:bg-[#FFC107]/10"
+                        >
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="min-w-0">
+                              <p className="truncate font-black text-black">
+                                {item.title}
+                              </p>
+
+                              <p className="mt-1 text-xs font-bold uppercase text-black/40">
+                                {item.status?.replaceAll("_", " ")}
+                              </p>
+                            </div>
+
+                            {item.hasPendingOffer ? (
+                              <span className="rounded-full bg-red-100 px-3 py-1 text-[10px] font-black uppercase text-red-700">
+                                New Offer
+                              </span>
+                            ) : item.hasAppointment ? (
+                              <span className="rounded-full bg-green-100 px-3 py-1 text-[10px] font-black uppercase text-green-700">
+                                Scheduled
+                              </span>
+                            ) : (
+                              <span className="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-black uppercase text-slate-500">
+                                Update
+                              </span>
+                            )}
+                          </div>
+
+                          {item.latestOffer ? (
+                            <div className="mt-3 rounded-2xl bg-[#FFC107]/20 p-3">
+                              <p className="flex items-center gap-2 text-xs font-black uppercase text-black/40">
+                                <MessageSquare size={14} />
+                                Admin Offer
+                              </p>
+
+                              <p className="mt-1 text-lg font-black text-black">
+                                {formatMoney(item.latestOffer.adminOfferPrice)}
+                              </p>
+
+                              <p className="mt-1 text-xs font-bold text-black/50">
+                                Response: {item.latestOffer.sellerResponse}
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="mt-3 rounded-2xl bg-slate-50 p-3">
+                              <p className="text-xs font-bold text-black/50">
+                                Waiting for admin offer.
+                              </p>
+                            </div>
+                          )}
+
+                          {item.hasAppointment && (
+                            <div className="mt-3 rounded-2xl bg-green-50 p-3">
+                              <p className="flex items-center gap-2 text-xs font-black uppercase text-green-700">
+                                <CalendarDays size={14} />
+                                Inspection Date
+                              </p>
+
+                              <p className="mt-1 text-sm font-black text-black">
+                                {formatDate(item.appointment.date)}
+                              </p>
+
+                              {item.appointment.location && (
+                                <p className="mt-1 text-xs font-semibold text-black/50">
+                                  {item.appointment.location}
+                                </p>
+                              )}
+                            </div>
+                          )}
+                        </Link>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
           )}
 
           <Link
@@ -101,13 +323,7 @@ export default function NavbarClient({ user }) {
             </div>
           ) : (
             <div className="flex items-center gap-3">
-              <Link
-                href="/signin"
-                className="rounded-full border border-black/10 px-5 py-2 font-bold text-black transition hover:bg-black hover:text-white"
-              >
-                Sign In
-              </Link>
-
+            
               <Link
                 href="/signup"
                 className="rounded-full bg-black px-5 py-2 font-bold text-white transition hover:bg-[#FFA500] hover:text-black"
@@ -118,7 +334,6 @@ export default function NavbarClient({ user }) {
           )}
         </div>
 
-        {/* Mobile Menu Button */}
         <button
           type="button"
           className="rounded-xl border border-black/10 p-2 md:hidden"
@@ -128,7 +343,6 @@ export default function NavbarClient({ user }) {
         </button>
       </div>
 
-      {/* Mobile Navigation */}
       {open && (
         <div className="border-t border-black/10 bg-white px-6 py-5 md:hidden">
           <div className="space-y-3">
@@ -149,6 +363,14 @@ export default function NavbarClient({ user }) {
             </Link>
 
             <Link
+              href="/properties"
+              className="block rounded-2xl px-4 py-3 font-bold text-black hover:bg-[#FFC107]/20"
+              onClick={closeMenu}
+            >
+              Properties
+            </Link>
+
+            <Link
               href="/contact"
               className="block rounded-2xl px-4 py-3 font-bold text-black hover:bg-[#FFC107]/20"
               onClick={closeMenu}
@@ -157,13 +379,32 @@ export default function NavbarClient({ user }) {
             </Link>
 
             {isLoggedIn && (
-              <Link
-                href="/sell"
-                className="block rounded-2xl px-4 py-3 font-bold text-black hover:bg-[#FFC107]/20"
-                onClick={closeMenu}
-              >
-                Sell
-              </Link>
+              <>
+                <Link
+                  href="/sell"
+                  className="block rounded-2xl px-4 py-3 font-bold text-black hover:bg-[#FFC107]/20"
+                  onClick={closeMenu}
+                >
+                  Sell
+                </Link>
+
+                <Link
+                  href="/my-requests"
+                  className="flex items-center justify-between rounded-2xl border border-black/10 px-4 py-3 font-bold text-black hover:bg-[#FFC107]/20"
+                  onClick={closeMenu}
+                >
+                  <span className="flex items-center gap-2">
+                    <Bell size={18} />
+                    Notifications
+                  </span>
+
+                  {unreadCount > 0 && (
+                    <span className="rounded-full bg-red-600 px-2 py-1 text-xs font-black text-white">
+                      {unreadCount}
+                    </span>
+                  )}
+                </Link>
+              </>
             )}
 
             <Link
@@ -213,14 +454,6 @@ export default function NavbarClient({ user }) {
                 </div>
               ) : (
                 <div className="grid gap-3">
-                  <Link
-                    href="/signin"
-                    className="rounded-2xl border border-black/10 px-4 py-3 text-center font-black text-black"
-                    onClick={closeMenu}
-                  >
-                    Sign In
-                  </Link>
-
                   <Link
                     href="/signup"
                     className="rounded-2xl bg-black px-4 py-3 text-center font-black text-white"

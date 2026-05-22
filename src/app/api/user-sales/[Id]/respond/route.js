@@ -1,13 +1,38 @@
 import { NextResponse } from "next/server";
+import mongoose from "mongoose";
 import { connectDB } from "@/src/app/lib/db";
 import UserSale from "@/src/app/lib/models/UserSale";
+import { getCurrentUser } from "@/src/app/lib/getCurrentUser";
+import { deleteCloudinaryImages } from "@/src/app/lib/deleteCloudinaryImages";
 
 export async function PATCH(request, { params }) {
   try {
+    const user = await getCurrentUser();
+
+    if (!user) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "You must be signed in to respond to this offer.",
+        },
+        { status: 401 }
+      );
+    }
+
     await connectDB();
 
     const { id } = await params;
     const body = await request.json();
+
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Invalid request ID.",
+        },
+        { status: 400 }
+      );
+    }
 
     const response = body.response;
 
@@ -15,7 +40,7 @@ export async function PATCH(request, { params }) {
       return NextResponse.json(
         {
           success: false,
-          message: "Response must be accepted or rejected",
+          message: "Response must be accepted or rejected.",
         },
         { status: 400 }
       );
@@ -27,9 +52,21 @@ export async function PATCH(request, { params }) {
       return NextResponse.json(
         {
           success: false,
-          message: "Sale request not found",
+          message: "Sale request not found.",
         },
         { status: 404 }
+      );
+    }
+
+    const submittedBy = saleRequest.submittedBy?.toString();
+
+    if (submittedBy !== user.id) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "You are not allowed to respond to this offer.",
+        },
+        { status: 403 }
       );
     }
 
@@ -40,7 +77,7 @@ export async function PATCH(request, { params }) {
       return NextResponse.json(
         {
           success: false,
-          message: "No offer found to respond to",
+          message: "No admin offer found to respond to.",
         },
         { status: 400 }
       );
@@ -50,7 +87,7 @@ export async function PATCH(request, { params }) {
       return NextResponse.json(
         {
           success: false,
-          message: "This offer has already been responded to",
+          message: "This offer has already been responded to.",
         },
         { status: 400 }
       );
@@ -67,21 +104,20 @@ export async function PATCH(request, { params }) {
 
       return NextResponse.json({
         success: true,
-        message: "Offer accepted. Admin can now schedule inspection.",
+        message:
+          "Offer accepted successfully. Admin can now schedule your inspection.",
         saleRequest,
       });
     }
 
     if (response === "rejected" && saleRequest.negotiationCount >= 3) {
-      saleRequest.status = "rejected";
-      await saleRequest.save();
-
+      await deleteCloudinaryImages(saleRequest.images);
       await UserSale.findByIdAndDelete(id);
 
       return NextResponse.json({
         success: true,
         message:
-          "Third offer rejected. Negotiation limit reached. Item has been rejected and deleted.",
+          "Third offer rejected. Negotiation limit reached. The request has been closed.",
       });
     }
 
@@ -94,10 +130,12 @@ export async function PATCH(request, { params }) {
       saleRequest,
     });
   } catch (error) {
+    console.error("RESPOND_TO_OFFER_ERROR:", error);
+
     return NextResponse.json(
       {
         success: false,
-        message: error.message || "Failed to respond to offer",
+        message: error.message || "Failed to respond to offer.",
       },
       { status: 500 }
     );

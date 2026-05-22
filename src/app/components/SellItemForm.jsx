@@ -1,15 +1,35 @@
 "use client";
 
 import { useState } from "react";
+import { UploadCloud, CheckCircle2 } from "lucide-react";
 
 const initialState = {
   sellerName: "",
   sellerPhone: "",
   sellerEmail: "",
+  cityArea: "",
+  idType: "",
+
   gadgetName: "",
-  gadgetDescription: "",
+  brandModel: "",
+  colorVariant: "",
+  serialOrImei: "",
+  category: "electronics_gadget",
+  otherCategory: "",
+  condition: "good",
   sellerAskingPrice: "",
-  condition: "used",
+  faultsAccessoriesReason: "",
+  additionalNotes: "",
+
+  returnPreference: "cash_payout",
+  desiredItem: "",
+  topUpAmount: "",
+
+  heardFrom: "instagram",
+  referralCode: "",
+  referredBy: "",
+
+  agreedToTerms: false,
 };
 
 export default function SellItemForm() {
@@ -49,6 +69,8 @@ export default function SellItemForm() {
       validFiles.push(file);
     }
 
+    previews.forEach((url) => URL.revokeObjectURL(url));
+
     setImages(validFiles);
 
     const previewUrls = validFiles.map((file) => URL.createObjectURL(file));
@@ -58,156 +80,409 @@ export default function SellItemForm() {
   const submitForm = async (event) => {
     event.preventDefault();
 
+    if (!form.agreedToTerms) {
+      alert("Please agree to the trade-in terms before submitting.");
+      return;
+    }
+
     if (images.length === 0) {
-      alert("Please upload at least one image");
+      alert("Please upload at least one item image.");
       return;
     }
 
     setLoading(true);
 
-    const formData = new FormData();
+    try {
+      const formData = new FormData();
 
-    formData.append("sellerName", form.sellerName);
-    formData.append("sellerPhone", form.sellerPhone);
-    formData.append("sellerEmail", form.sellerEmail);
-    formData.append("gadgetName", form.gadgetName);
-    formData.append("gadgetDescription", form.gadgetDescription);
-    formData.append("sellerAskingPrice", form.sellerAskingPrice);
-    formData.append("condition", form.condition);
+      Object.entries(form).forEach(([key, value]) => {
+        formData.append(key, value);
+      });
 
-    images.forEach((image) => {
-      formData.append("images", image);
-    });
+      images.forEach((image) => {
+        formData.append("images", image);
+      });
 
-    const res = await fetch("/api/user-sales", {
-      method: "POST",
-      body: formData,
-    });
+      const res = await fetch("/api/user-sales", {
+        method: "POST",
+        body: formData,
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    setLoading(false);
+      if (!data.success) {
+        alert(data.message || "Submission failed");
+        return;
+      }
 
-    if (!data.success) {
-      alert(data.message);
-      return;
+      alert("Your item has been submitted for admin review.");
+
+      previews.forEach((url) => URL.revokeObjectURL(url));
+      setForm(initialState);
+      setImages([]);
+      setPreviews([]);
+    } catch (error) {
+      alert("Something went wrong while submitting your item.");
+    } finally {
+      setLoading(false);
     }
-
-    alert("Your gadget has been submitted for admin review.");
-
-    setForm(initialState);
-    setImages([]);
-    setPreviews([]);
   };
 
   return (
     <form
       onSubmit={submitForm}
-      className="mx-auto max-w-2xl rounded-[2rem] border border-black/10 bg-white p-6 shadow-sm"
+      className="mx-auto max-w-5xl rounded-[2rem] border border-black/10 bg-white p-5 shadow-sm md:p-8"
     >
-      <div className="grid gap-4 md:grid-cols-2">
-        <input
-          value={form.sellerName}
-          onChange={(e) => updateField("sellerName", e.target.value)}
-          placeholder="Your name"
-          className="rounded-2xl border border-black/10 px-4 py-3 outline-none focus:border-[#FFA500]"
-          required
-        />
+      <div className="mb-8 rounded-[1.5rem] bg-black p-6 text-white">
+        <p className="text-xs font-black uppercase tracking-[0.35em] text-[#FFC107]">
+          We Buy · We Sell · We Swap
+        </p>
 
-        <input
-          value={form.sellerPhone}
-          onChange={(e) => updateField("sellerPhone", e.target.value)}
-          placeholder="Phone number"
-          className="rounded-2xl border border-black/10 px-4 py-3 outline-none focus:border-[#FFA500]"
-          required
-        />
+        <h1 className="mt-3 text-3xl font-black md:text-4xl">
+          Customer Trade-In Agreement
+        </h1>
 
-        <input
-          value={form.sellerEmail}
-          onChange={(e) => updateField("sellerEmail", e.target.value)}
-          placeholder="Email address"
-          className="rounded-2xl border border-black/10 px-4 py-3 outline-none focus:border-[#FFA500]"
-        />
-
-        <input
-          value={form.gadgetName}
-          onChange={(e) => updateField("gadgetName", e.target.value)}
-          placeholder="Gadget name"
-          className="rounded-2xl border border-black/10 px-4 py-3 outline-none focus:border-[#FFA500]"
-          required
-        />
-
-        <input
-          type="number"
-          value={form.sellerAskingPrice}
-          onChange={(e) => updateField("sellerAskingPrice", e.target.value)}
-          placeholder="Your asking price"
-          className="rounded-2xl border border-black/10 px-4 py-3 outline-none focus:border-[#FFA500]"
-          required
-        />
-
-        <select
-          value={form.condition}
-          onChange={(e) => updateField("condition", e.target.value)}
-          className="rounded-2xl border border-black/10 px-4 py-3 outline-none focus:border-[#FFA500]"
-        >
-          <option value="new">New</option>
-          <option value="used">Used</option>
-          <option value="faulty">Faulty</option>
-        </select>
+        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-white/60">
+          Submit your item for review. Student Shop Nigeria will inspect the
+          item, negotiate if necessary, and contact you before any final deal is
+          completed.
+        </p>
       </div>
 
-      <textarea
-        value={form.gadgetDescription}
-        onChange={(e) => updateField("gadgetDescription", e.target.value)}
-        placeholder="Describe the gadget, condition, faults, accessories, battery health, etc."
-        className="mt-4 min-h-32 w-full rounded-2xl border border-black/10 px-4 py-3 outline-none focus:border-[#FFA500]"
-        required
-      />
-
-      <div className="mt-4 rounded-3xl border border-dashed border-black/20 bg-[#FFC107]/10 p-5">
-        <label className="block cursor-pointer">
-          <span className="block text-sm font-black text-black">
-            Upload item pictures
+      {/* 1. Customer Details */}
+      <section className="rounded-[1.5rem] border border-black/10 p-5">
+        <div className="mb-5 flex items-center gap-3">
+          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#FFA500] text-sm font-black text-black">
+            1
           </span>
+          <h2 className="text-xl font-black text-black">Customer Details</h2>
+        </div>
 
-          <span className="mt-1 block text-sm text-black/50">
-            Maximum 5 images. JPG, PNG, or WEBP. Each image must be under 5MB.
-          </span>
-
+        <div className="grid gap-4 md:grid-cols-2">
           <input
-            type="file"
-            accept="image/*"
-            multiple
-            onChange={handleImageChange}
-            className="mt-4 block w-full text-sm"
+            value={form.sellerName}
+            onChange={(e) => updateField("sellerName", e.target.value)}
+            placeholder="Full name *"
+            className="rounded-2xl border border-black/10 px-4 py-3 outline-none focus:border-[#FFA500]"
             required
           />
-        </label>
 
-        {previews.length > 0 && (
-          <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-5">
-            {previews.map((src, index) => (
-              <div
-                key={src}
-                className="relative h-24 overflow-hidden rounded-2xl bg-white"
-              >
-                <img
-                  src={src}
-                  alt={`Preview ${index + 1}`}
-                  className="h-full w-full object-cover"
-                />
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+          <input
+            value={form.sellerPhone}
+            onChange={(e) => updateField("sellerPhone", e.target.value)}
+            placeholder="Phone / WhatsApp *"
+            className="rounded-2xl border border-black/10 px-4 py-3 outline-none focus:border-[#FFA500]"
+            required
+          />
+
+          <input
+            value={form.sellerEmail}
+            onChange={(e) => updateField("sellerEmail", e.target.value)}
+            placeholder="Email address optional"
+            className="rounded-2xl border border-black/10 px-4 py-3 outline-none focus:border-[#FFA500]"
+          />
+
+          <input
+            value={form.cityArea}
+            onChange={(e) => updateField("cityArea", e.target.value)}
+            placeholder="City / Area *"
+            className="rounded-2xl border border-black/10 px-4 py-3 outline-none focus:border-[#FFA500]"
+            required
+          />
+
+          <select
+            value={form.idType}
+            onChange={(e) => updateField("idType", e.target.value)}
+            className="rounded-2xl border border-black/10 px-4 py-3 outline-none focus:border-[#FFA500] md:col-span-2"
+            required
+          >
+            <option value="">Select ID type *</option>
+            <option value="nin">NIN</option>
+            <option value="drivers_licence">Driver&apos;s Licence</option>
+            <option value="student_id">Student ID</option>
+            <option value="voters_card">Voter&apos;s Card</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+      </section>
+
+      {/* 2. Item Being Traded In */}
+      <section className="mt-5 rounded-[1.5rem] border border-black/10 p-5">
+        <div className="mb-5 flex items-center gap-3">
+          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#FFA500] text-sm font-black text-black">
+            2
+          </span>
+          <h2 className="text-xl font-black text-black">
+            Item Being Traded In
+          </h2>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <input
+            value={form.gadgetName}
+            onChange={(e) => updateField("gadgetName", e.target.value)}
+            placeholder="Item name *"
+            className="rounded-2xl border border-black/10 px-4 py-3 outline-none focus:border-[#FFA500]"
+            required
+          />
+
+          <input
+            value={form.brandModel}
+            onChange={(e) => updateField("brandModel", e.target.value)}
+            placeholder="Brand & model"
+            className="rounded-2xl border border-black/10 px-4 py-3 outline-none focus:border-[#FFA500]"
+          />
+
+          <input
+            value={form.colorVariant}
+            onChange={(e) => updateField("colorVariant", e.target.value)}
+            placeholder="Colour / size / variant"
+            className="rounded-2xl border border-black/10 px-4 py-3 outline-none focus:border-[#FFA500]"
+          />
+
+          <input
+            value={form.serialOrImei}
+            onChange={(e) => updateField("serialOrImei", e.target.value)}
+            placeholder="Serial no. / IMEI if applicable"
+            className="rounded-2xl border border-black/10 px-4 py-3 outline-none focus:border-[#FFA500]"
+          />
+
+          <select
+            value={form.category}
+            onChange={(e) => updateField("category", e.target.value)}
+            className="rounded-2xl border border-black/10 px-4 py-3 outline-none focus:border-[#FFA500]"
+            required
+          >
+            <option value="phone_tablet">Phone / Tablet</option>
+            <option value="laptop_computer">Laptop / Computer</option>
+            <option value="electronics_gadget">Electronics / Gadget</option>
+            <option value="furniture_home_item">Furniture / Home Item</option>
+            <option value="other">Other</option>
+          </select>
+
+          <input
+            value={form.otherCategory}
+            onChange={(e) => updateField("otherCategory", e.target.value)}
+            placeholder="Other category if applicable"
+            className="rounded-2xl border border-black/10 px-4 py-3 outline-none focus:border-[#FFA500]"
+          />
+
+          <select
+            value={form.condition}
+            onChange={(e) => updateField("condition", e.target.value)}
+            className="rounded-2xl border border-black/10 px-4 py-3 outline-none focus:border-[#FFA500]"
+            required
+          >
+            <option value="brand_new">Brand new unused</option>
+            <option value="good">Good — minor wear</option>
+            <option value="fair">Fair — visible wear</option>
+            <option value="needs_repair">Needs repair</option>
+          </select>
+
+          <input
+            type="number"
+            value={form.sellerAskingPrice}
+            onChange={(e) => updateField("sellerAskingPrice", e.target.value)}
+            placeholder="Customer's asking price ₦ *"
+            className="rounded-2xl border border-black/10 px-4 py-3 outline-none focus:border-[#FFA500]"
+            required
+          />
+        </div>
+
+        <textarea
+          value={form.faultsAccessoriesReason}
+          onChange={(e) =>
+            updateField("faultsAccessoriesReason", e.target.value)
+          }
+          placeholder="Faults / accessories included / reason for selling *"
+          className="mt-4 min-h-32 w-full rounded-2xl border border-black/10 px-4 py-3 outline-none focus:border-[#FFA500]"
+          required
+        />
+
+        <textarea
+          value={form.additionalNotes}
+          onChange={(e) => updateField("additionalNotes", e.target.value)}
+          placeholder="Additional notes"
+          className="mt-4 min-h-24 w-full rounded-2xl border border-black/10 px-4 py-3 outline-none focus:border-[#FFA500]"
+        />
+
+        <div className="mt-4 rounded-3xl border border-dashed border-black/20 bg-[#FFC107]/10 p-5">
+          <label className="block cursor-pointer">
+            <span className="flex items-center gap-2 text-sm font-black text-black">
+              <UploadCloud size={18} />
+              Upload item pictures
+            </span>
+
+            <span className="mt-1 block text-sm text-black/50">
+              Maximum 5 images. JPG, PNG, or WEBP. Each image must be under 5MB.
+            </span>
+
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleImageChange}
+              className="mt-4 block w-full text-sm"
+              required
+            />
+          </label>
+
+          {previews.length > 0 && (
+            <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-5">
+              {previews.map((src, index) => (
+                <div
+                  key={src}
+                  className="relative h-24 overflow-hidden rounded-2xl bg-white"
+                >
+                  <img
+                    src={src}
+                    alt={`Preview ${index + 1}`}
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* 3. What Customer Wants */}
+      <section className="mt-5 rounded-[1.5rem] border border-black/10 p-5">
+        <div className="mb-5 flex items-center gap-3">
+          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#FFA500] text-sm font-black text-black">
+            3
+          </span>
+          <h2 className="text-xl font-black text-black">
+            What Customer Wants In Return
+          </h2>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <select
+            value={form.returnPreference}
+            onChange={(e) => updateField("returnPreference", e.target.value)}
+            className="rounded-2xl border border-black/10 px-4 py-3 outline-none focus:border-[#FFA500]"
+            required
+          >
+            <option value="cash_payout">Cash payout</option>
+            <option value="store_credit">Store credit</option>
+            <option value="swap">Swap for another item</option>
+            <option value="part_payment">Part-payment toward new item</option>
+          </select>
+
+          <input
+            value={form.desiredItem}
+            onChange={(e) => updateField("desiredItem", e.target.value)}
+            placeholder="Desired item if swapping or upgrading"
+            className="rounded-2xl border border-black/10 px-4 py-3 outline-none focus:border-[#FFA500]"
+          />
+
+          <input
+            type="number"
+            value={form.topUpAmount}
+            onChange={(e) => updateField("topUpAmount", e.target.value)}
+            placeholder="Top-up amount willing to add ₦"
+            className="rounded-2xl border border-black/10 px-4 py-3 outline-none focus:border-[#FFA500] md:col-span-2"
+          />
+        </div>
+      </section>
+
+      {/* 4. How did you hear about us */}
+      <section className="mt-5 rounded-[1.5rem] border border-black/10 p-5">
+        <div className="mb-5 flex items-center gap-3">
+          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#FFA500] text-sm font-black text-black">
+            4
+          </span>
+          <h2 className="text-xl font-black text-black">
+            How Did You Hear About Us?
+          </h2>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-3">
+          <select
+            value={form.heardFrom}
+            onChange={(e) => updateField("heardFrom", e.target.value)}
+            className="rounded-2xl border border-black/10 px-4 py-3 outline-none focus:border-[#FFA500]"
+            required
+          >
+            <option value="instagram">Instagram</option>
+            <option value="whatsapp">WhatsApp</option>
+            <option value="facebook">Facebook</option>
+            <option value="tiktok">TikTok</option>
+            <option value="twitter_x">Twitter / X</option>
+            <option value="friend_family">Friend / Family</option>
+            <option value="flyer_banner">Flyer / Banner</option>
+            <option value="walk_in">Walk-in</option>
+          </select>
+
+          <input
+            value={form.referralCode}
+            onChange={(e) => updateField("referralCode", e.target.value)}
+            placeholder="Referral code if any"
+            className="rounded-2xl border border-black/10 px-4 py-3 outline-none focus:border-[#FFA500]"
+          />
+
+          <input
+            value={form.referredBy}
+            onChange={(e) => updateField("referredBy", e.target.value)}
+            placeholder="Referred by name / username"
+            className="rounded-2xl border border-black/10 px-4 py-3 outline-none focus:border-[#FFA500]"
+          />
+        </div>
+      </section>
+
+      {/* 5. Agreement */}
+      <section className="mt-5 rounded-[1.5rem] border border-black/10 bg-[#FFC107]/10 p-5">
+        <div className="mb-5 flex items-center gap-3">
+          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#FFA500] text-sm font-black text-black">
+            5
+          </span>
+          <h2 className="text-xl font-black text-black">
+            Agreement & Confirmation
+          </h2>
+        </div>
+
+        <div className="space-y-3 text-sm leading-relaxed text-black/70">
+          <p>
+            By submitting this form, you confirm that the item is yours, not
+            stolen, borrowed, or pledged as collateral.
+          </p>
+
+          <p>
+            Student Shop Nigeria may inspect the item and may offer a different
+            value from your asking price. You are not obliged to accept the final
+            offer.
+          </p>
+
+          <p>
+            If the item condition differs from what you described, the offer may
+            be revised or withdrawn.
+          </p>
+        </div>
+
+        <label className="mt-5 flex cursor-pointer items-start gap-3 rounded-2xl bg-white p-4">
+          <input
+            type="checkbox"
+            checked={form.agreedToTerms}
+            onChange={(e) => updateField("agreedToTerms", e.target.checked)}
+            className="mt-1 h-5 w-5 accent-[#FFA500]"
+            required
+          />
+
+          <span className="text-sm font-bold text-black">
+            I have read and understood the terms above. I confirm the item is
+            mine, and all information provided is accurate and complete.
+          </span>
+        </label>
+      </section>
 
       <button
+        type="submit"
         disabled={loading}
-        className="mt-5 w-full rounded-2xl bg-[#FFA500] px-5 py-4 font-black text-black hover:bg-[#FFC107] disabled:opacity-60"
+        className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#FFA500] px-5 py-4 font-black text-black hover:bg-[#FFC107] disabled:opacity-60"
       >
-        {loading ? "Uploading..." : "Submit Gadget"}
+        <CheckCircle2 size={18} />
+        {loading ? "Submitting..." : "Submit Trade-In Request"}
       </button>
     </form>
   );

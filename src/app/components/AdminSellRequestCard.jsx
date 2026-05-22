@@ -1,60 +1,54 @@
+import Link from "next/link";
+
 export default function AdminSellRequestCard({ item }) {
-  const firstImage = item.images?.[0]?.url;
+  console.log(item);
 
   return (
-    <a
-      href={`/admin/sell-requests/${item._id}`}
-      className="block rounded-3xl border border-black/10 bg-white p-5 shadow-sm hover:border-[#FFA500]"
-    >
-      <div className="flex gap-4">
-        <div className="h-28 w-28 shrink-0 overflow-hidden rounded-2xl bg-[#FFC107]/20">
-          {firstImage ? (
-            <img
-              src={firstImage}
-              alt={item.gadgetName}
-              className="h-full w-full object-cover"
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center text-xs font-bold text-black/40">
-              No Image
-            </div>
-          )}
-        </div>
+    <div className="rounded-[2rem] bg-white p-6 shadow-sm border border-black/10">
+      <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h2 className="text-2xl font-black text-black">
+            {item.gadgetName}
+          </h2>
 
-        <div className="flex flex-1 flex-col justify-between">
-          <div>
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h3 className="text-xl font-black text-black">
-                  {item.gadgetName}
-                </h3>
+          <p className="mt-2 text-black/60">
+            {item.brandModel}
+          </p>
 
-                <p className="mt-1 text-sm text-black/60">
-                  Seller: {item.sellerName} · {item.sellerPhone}
-                </p>
-              </div>
-
-              <span className="rounded-full bg-[#FFC107] px-3 py-1 text-xs font-black text-black">
-                {item.status}
-              </span>
-            </div>
-
-            <p className="mt-2 line-clamp-2 text-sm text-black/60">
-              {item.gadgetDescription}
-            </p>
-          </div>
-
-          <div className="mt-4 flex items-center justify-between">
-            <p className="font-black text-black">
-              Asking: ₦{Number(item.sellerAskingPrice).toLocaleString()}
+          <div className="mt-4 grid gap-2 text-sm text-black/70">
+            <p>
+              <strong>Seller:</strong>{" "}
+              {item.sellerName}
             </p>
 
-            <p className="text-sm font-bold text-black/50">
-              Trials: {item.negotiationCount}/3
+            <p>
+              <strong>Phone:</strong>{" "}
+              {item.sellerPhone}
+            </p>
+
+            <p>
+              <strong>Price:</strong> ₦
+              {Number(
+                item.sellerAskingPrice
+              ).toLocaleString()}
+            </p>
+
+            <p>
+              <strong>Status:</strong>{" "}
+              {item.status}
             </p>
           </div>
         </div>
+
+        <Link
+          href={`/admin/sell-requests/${String(
+            item._id
+          )}`}
+          className="rounded-full bg-black px-6 py-3 font-black text-white hover:bg-[#FFA500]"
+        >
+          View Order
+        </Link>
       </div>
-    </a>
+    </div>
   );
 }
