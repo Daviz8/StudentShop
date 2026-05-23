@@ -9,9 +9,11 @@ export default function CheckoutPage() {
 
   const [cartItems, setCartItems] = useState([]);
   const [deliveryMethod, setDeliveryMethod] = useState("standard");
+  const [loading, setLoading] = useState(false);
 
   const [customer, setCustomer] = useState({
     fullName: "",
+    email: "",
     phone: "",
     address: "",
   });
@@ -41,8 +43,8 @@ export default function CheckoutPage() {
   const orderTotal = subtotal + escrowFee + shippingFee;
 
   const payNow = async () => {
-    if (!customer.fullName || !customer.phone) {
-      alert("Please enter your full name and phone number");
+    if (!customer.fullName || !customer.email || !customer.phone) {
+      alert("Please enter your full name, email and phone number");
       return;
     }
 
@@ -56,29 +58,38 @@ export default function CheckoutPage() {
       return;
     }
 
-    const res = await fetch("/api/orders/checkout", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        customer,
-        deliveryMethod,
-        shippingFee,
-        escrowFee,
-        items: cartItems,
-      }),
-    });
+    setLoading(true);
 
-    const data = await res.json();
+    try {
+      const res = await fetch("/api/orders/checkout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          customer,
+          deliveryMethod,
+          shippingFee,
+          escrowFee,
+          items: cartItems,
+        }),
+      });
 
-    if (!data.success) {
-      alert(data.message);
-      return;
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        alert(data.message || "Payment initialization failed");
+        return;
+      }
+
+      localStorage.setItem("pending_order_id", data.order._id);
+      window.location.href = data.payment.authorizationUrl;
+    } catch (error) {
+      console.error("PAYSTACK_CHECKOUT_ERROR:", error);
+      alert("Something went wrong while starting payment");
+    } finally {
+      setLoading(false);
     }
-
-    localStorage.removeItem("cart");
-    router.push(`/payment-success?orderId=${data.order._id}`);
   };
 
   return (
@@ -117,11 +128,19 @@ export default function CheckoutPage() {
                 />
 
                 <input
+                  value={customer.email}
+                  onChange={(e) => updateCustomer("email", e.target.value)}
+                  type="email"
+                  placeholder="Email address"
+                  className="rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3.5 text-sm outline-none transition focus:border-slate-950 focus:bg-white focus:ring-1 focus:ring-slate-950"
+                />
+
+                <input
                   value={customer.phone}
                   onChange={(e) => updateCustomer("phone", e.target.value)}
                   type="tel"
                   placeholder="Phone number"
-                  className="rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3.5 text-sm outline-none transition focus:border-slate-950 focus:bg-white focus:ring-1 focus:ring-slate-950"
+                  className="rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3.5 text-sm outline-none transition focus:border-slate-950 focus:bg-white focus:ring-1 focus:ring-slate-950 md:col-span-2"
                 />
               </div>
             </div>
@@ -263,11 +282,11 @@ export default function CheckoutPage() {
 
           <button
             onClick={payNow}
-            disabled={cartItems.length === 0}
+            disabled={loading || cartItems.length === 0}
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-950 py-4 text-sm font-black text-white shadow-md transition hover:bg-green-600 active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-slate-200"
           >
             <CheckCircle2 size={16} />
-            Secure Payment
+            {loading ? "Starting Payment..." : "Pay"}
           </button>
         </aside>
       </div>

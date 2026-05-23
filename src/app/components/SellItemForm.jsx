@@ -1,6 +1,9 @@
+
+
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { UploadCloud, CheckCircle2 } from "lucide-react";
 
 const initialState = {
@@ -9,6 +12,7 @@ const initialState = {
   sellerEmail: "",
   cityArea: "",
   idType: "",
+  ninNumber: "",
 
   gadgetName: "",
   brandModel: "",
@@ -33,6 +37,8 @@ const initialState = {
 };
 
 export default function SellItemForm() {
+  const router = useRouter();
+
   const [form, setForm] = useState(initialState);
   const [images, setImages] = useState([]);
   const [previews, setPreviews] = useState([]);
@@ -50,6 +56,7 @@ export default function SellItemForm() {
 
     if (selectedFiles.length > 5) {
       alert("You can upload a maximum of 5 images");
+      event.target.value = "";
       return;
     }
 
@@ -58,11 +65,13 @@ export default function SellItemForm() {
     for (const file of selectedFiles) {
       if (!file.type.startsWith("image/")) {
         alert("Only image files are allowed");
+        event.target.value = "";
         return;
       }
 
       if (file.size > 5 * 1024 * 1024) {
         alert("Each image must not be larger than 5MB");
+        event.target.value = "";
         return;
       }
 
@@ -80,6 +89,43 @@ export default function SellItemForm() {
   const submitForm = async (event) => {
     event.preventDefault();
 
+    if (!form.sellerName.trim()) {
+      alert("Please enter your full name.");
+      return;
+    }
+
+    if (!form.sellerPhone.trim()) {
+      alert("Please enter your phone / WhatsApp number.");
+      return;
+    }
+
+    if (!form.cityArea.trim()) {
+      alert("Please enter your city / area.");
+      return;
+    }
+
+    if (!form.idType.trim()) {
+      alert("Please select your ID type.");
+      return;
+    }
+
+    if (!form.gadgetName.trim()) {
+      alert("Please enter the item name.");
+      return;
+    }
+
+    if (!form.sellerAskingPrice || Number(form.sellerAskingPrice) <= 0) {
+      alert("Please enter a valid asking price.");
+      return;
+    }
+
+    if (!form.faultsAccessoriesReason.trim()) {
+      alert(
+        "Please describe faults, accessories included, or reason for selling."
+      );
+      return;
+    }
+
     if (!form.agreedToTerms) {
       alert("Please agree to the trade-in terms before submitting.");
       return;
@@ -96,8 +142,16 @@ export default function SellItemForm() {
       const formData = new FormData();
 
       Object.entries(form).forEach(([key, value]) => {
-        formData.append(key, value);
+        formData.append(key, String(value));
       });
+
+      /*
+        IMPORTANT FIX:
+        Your backend is still expecting "gadgetDescription".
+        Your form uses "faultsAccessoriesReason".
+        This sends the same description under both names.
+      */
+      formData.append("gadgetDescription", form.faultsAccessoriesReason);
 
       images.forEach((image) => {
         formData.append("images", image);
@@ -110,18 +164,26 @@ export default function SellItemForm() {
 
       const data = await res.json();
 
-      if (!data.success) {
+      if (!res.ok || !data.success) {
+        console.error("SUBMISSION_ERROR:", data);
         alert(data.message || "Submission failed");
         return;
       }
 
-      alert("Your item has been submitted for admin review.");
+      alert(
+        "Your item has been submitted successfully. You can now track admin offers."
+      );
 
       previews.forEach((url) => URL.revokeObjectURL(url));
+
       setForm(initialState);
       setImages([]);
       setPreviews([]);
+
+      router.push(`/sell-requests/${data.saleRequest._id}`);
+      router.refresh();
     } catch (error) {
+      console.error("SELL_ITEM_FORM_ERROR:", error);
       alert("Something went wrong while submitting your item.");
     } finally {
       setLoading(false);
@@ -149,12 +211,12 @@ export default function SellItemForm() {
         </p>
       </div>
 
-      {/* 1. Customer Details */}
       <section className="rounded-[1.5rem] border border-black/10 p-5">
         <div className="mb-5 flex items-center gap-3">
           <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#FFA500] text-sm font-black text-black">
             1
           </span>
+
           <h2 className="text-xl font-black text-black">Customer Details</h2>
         </div>
 
@@ -193,7 +255,7 @@ export default function SellItemForm() {
           <select
             value={form.idType}
             onChange={(e) => updateField("idType", e.target.value)}
-            className="rounded-2xl border border-black/10 px-4 py-3 outline-none focus:border-[#FFA500] md:col-span-2"
+            className="rounded-2xl border border-black/10 px-4 py-3 outline-none focus:border-[#FFA500]"
             required
           >
             <option value="">Select ID type *</option>
@@ -203,15 +265,22 @@ export default function SellItemForm() {
             <option value="voters_card">Voter&apos;s Card</option>
             <option value="other">Other</option>
           </select>
+
+          <input
+            value={form.ninNumber}
+            onChange={(e) => updateField("ninNumber", e.target.value)}
+            placeholder="NIN number"
+            className="rounded-2xl border border-black/10 px-4 py-3 outline-none focus:border-[#FFA500]"
+          />
         </div>
       </section>
 
-      {/* 2. Item Being Traded In */}
       <section className="mt-5 rounded-[1.5rem] border border-black/10 p-5">
         <div className="mb-5 flex items-center gap-3">
           <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#FFA500] text-sm font-black text-black">
             2
           </span>
+
           <h2 className="text-xl font-black text-black">
             Item Being Traded In
           </h2>
@@ -274,6 +343,7 @@ export default function SellItemForm() {
             required
           >
             <option value="brand_new">Brand new unused</option>
+            <option value="like_new">Like new</option>
             <option value="good">Good — minor wear</option>
             <option value="fair">Fair — visible wear</option>
             <option value="needs_repair">Needs repair</option>
@@ -346,12 +416,12 @@ export default function SellItemForm() {
         </div>
       </section>
 
-      {/* 3. What Customer Wants */}
       <section className="mt-5 rounded-[1.5rem] border border-black/10 p-5">
         <div className="mb-5 flex items-center gap-3">
           <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#FFA500] text-sm font-black text-black">
             3
           </span>
+
           <h2 className="text-xl font-black text-black">
             What Customer Wants In Return
           </h2>
@@ -387,12 +457,12 @@ export default function SellItemForm() {
         </div>
       </section>
 
-      {/* 4. How did you hear about us */}
       <section className="mt-5 rounded-[1.5rem] border border-black/10 p-5">
         <div className="mb-5 flex items-center gap-3">
           <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#FFA500] text-sm font-black text-black">
             4
           </span>
+
           <h2 className="text-xl font-black text-black">
             How Did You Hear About Us?
           </h2>
@@ -431,12 +501,12 @@ export default function SellItemForm() {
         </div>
       </section>
 
-      {/* 5. Agreement */}
       <section className="mt-5 rounded-[1.5rem] border border-black/10 bg-[#FFC107]/10 p-5">
         <div className="mb-5 flex items-center gap-3">
           <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#FFA500] text-sm font-black text-black">
             5
           </span>
+
           <h2 className="text-xl font-black text-black">
             Agreement & Confirmation
           </h2>

@@ -4,6 +4,11 @@ import { connectDB } from "@/src/app/lib/db";
 import Product from "@/src/app/lib/models/Product";
 import Property from "@/src/app/lib/models/Property";
 import Order from "@/src/app/lib/models/Order";
+import { initializePaystackTransaction } from "@/src/app/lib/Paystack";
+
+function generateReference() {
+  return `SSN-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
+}
 
 export async function POST(request) {
   const session = await mongoose.startSession();
@@ -11,15 +16,25 @@ export async function POST(request) {
   try {
     await connectDB();
 
+    if (!process.env.PAYSTACK_SECRET_KEY) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "PAYSTACK_SECRET_KEY is missing in .env.local",
+        },
+        { status: 500 }
+      );
+    }
+
     const body = await request.json();
 
     const { customer, items, deliveryMethod, shippingFee, escrowFee } = body;
 
-    if (!customer?.fullName || !customer?.phone) {
+    if (!customer?.fullName || !customer?.phone || !customer?.email) {
       return NextResponse.json(
         {
           success: false,
-          message: "Customer name and phone number are required",
+          message: "Customer full name, email and phone number are required.",
         },
         { status: 400 }
       );
@@ -29,7 +44,7 @@ export async function POST(request) {
       return NextResponse.json(
         {
           success: false,
-          message: "Cart is empty",
+          message: "Cart is empty.",
         },
         { status: 400 }
       );
@@ -52,36 +67,22 @@ export async function POST(request) {
             .replace("product-", "");
 
         if (!realItemId) {
-          throw new Error(`${item.name} has an invalid item ID`);
+          throw new Error(`${item.name} has an invalid item ID.`);
         }
 
-        const dbItem = await Model.findOneAndUpdate(
-          {
-            _id: realItemId,
-            isActive: true,
-            stock: { $gte: Number(item.quantity) },
-          },
-          {
-            $inc: {
-              stock: -Number(item.quantity),
-            },
-          },
-          {
-            new: true,
-            session,
-          }
-        );
+        const dbItem = await Model.findOne({
+          _id: realItemId,
+          isActive: true,
+          stock: { $gte: Number(item.quantity) },
+        }).session(session);
 
         if (!dbItem) {
-          throw new Error(`${item.name} is out of stock or unavailable`);
+          throw new Error(`${item.name} is out of stock or unavailable.`);
         }
 
-        if (dbItem.stock === 0) {
-          dbItem.isActive = false;
-          await dbItem.save({ session });
-        }
+        const quantity = Number(item.quantity);
+        const lineTotal = Number(dbItem.price) * quantity;
 
-        const lineTotal = Number(dbItem.price) * Number(item.quantity);
         totalAmount += lineTotal;
 
         orderItems.push({
@@ -89,7 +90,7 @@ export async function POST(request) {
           product: isProperty ? undefined : dbItem._id,
           property: isProperty ? dbItem._id : undefined,
           name: dbItem.name,
-          quantity: Number(item.quantity),
+          quantity,
           price: Number(dbItem.price),
         });
       }
@@ -97,12 +98,14 @@ export async function POST(request) {
       totalAmount += Number(shippingFee || 0);
       totalAmount += Number(escrowFee || 0);
 
+      const paymentReference = generateReference();
+
       const orders = await Order.create(
         [
           {
             customerName: customer.fullName,
             customerPhone: customer.phone,
-            customerEmail: customer.email || "",
+            customerEmail: customer.email,
             items: orderItems,
             totalAmount,
             status: "pending",
@@ -110,6 +113,8 @@ export async function POST(request) {
             deliveryAddress: customer.address || "",
             shippingFee: Number(shippingFee || 0),
             escrowFee: Number(escrowFee || 0),
+            paymentProvider: "paystack",
+            paymentReference,
           },
         ],
         { session }
@@ -118,19 +123,54 @@ export async function POST(request) {
       createdOrder = orders[0];
     });
 
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+
+    const paystackTransaction = await initializePaystackTransaction({
+      email: createdOrder.customerEmail,
+      amount: Math.round(Number(createdOrder.totalAmount) * 100),
+      reference: createdOrder.paymentReference,
+      callbackUrl: `${siteUrl}/payment/callback`,
+      metadata: {
+        orderId: createdOrder._id.toString(),
+        customerName: createdOrder.customerName,
+        customerPhone: createdOrder.customerPhone,
+      },
+    });
+
+    if (!paystackTransaction?.authorization_url) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Paystack did not return an authorization URL.",
+          paystackTransaction,
+        },
+        { status: 500 }
+      );
+    }
+
+    createdOrder.paymentAccessCode = paystackTransaction.access_code || "";
+    await createdOrder.save();
+
     return NextResponse.json(
       {
         success: true,
-        message: "Order created successfully",
-        order: createdOrder,
+        message: "Payment initialized successfully.",
+        order: JSON.parse(JSON.stringify(createdOrder)),
+        payment: {
+          authorizationUrl: paystackTransaction.authorization_url,
+          accessCode: paystackTransaction.access_code,
+          reference: paystackTransaction.reference,
+        },
       },
       { status: 201 }
     );
   } catch (error) {
+    console.error("CHECKOUT_PAYSTACK_ERROR:", error);
+
     return NextResponse.json(
       {
         success: false,
-        message: error.message || "Checkout failed",
+        message: error.message || "Checkout failed.",
       },
       { status: 500 }
     );

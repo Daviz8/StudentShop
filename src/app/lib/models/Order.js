@@ -86,8 +86,33 @@ const OrderSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ["pending", "paid", "cancelled"],
+      enum: ["pending", "paid", "failed", "cancelled"],
       default: "pending",
+    },
+
+    paymentProvider: {
+      type: String,
+      default: "paystack",
+    },
+
+    paymentReference: {
+      type: String,
+      index: true,
+      default: "",
+    },
+
+    paymentAccessCode: {
+      type: String,
+      default: "",
+    },
+
+    paidAt: {
+      type: Date,
+    },
+
+    paystackData: {
+      type: Object,
+      default: {},
     },
   },
   { timestamps: true }
