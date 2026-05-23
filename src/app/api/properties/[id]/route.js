@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import mongoose from "mongoose";
 import { connectDB } from "@/src/app/lib/db";
-import Product from "@/src/app/lib/models/Product";
+import Property from "@/src/app/lib/models/Property";
 
 export async function GET(request, { params }) {
   try {
@@ -13,19 +13,19 @@ export async function GET(request, { params }) {
       return NextResponse.json(
         {
           success: false,
-          message: "Invalid product ID",
+          message: "Invalid property ID",
         },
         { status: 400 }
       );
     }
 
-    const product = await Product.findById(id).lean();
+    const property = await Property.findById(id).lean();
 
     if (!property) {
       return NextResponse.json(
         {
           success: false,
-          message: "product not found",
+          message: "Property not found",
         },
         { status: 404 }
       );
@@ -33,7 +33,7 @@ export async function GET(request, { params }) {
 
     return NextResponse.json({
       success: true,
-      product: JSON.parse(JSON.stringify(product)),
+      property: JSON.parse(JSON.stringify(property)),
     });
   } catch (error) {
     return NextResponse.json(

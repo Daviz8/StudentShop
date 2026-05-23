@@ -21,16 +21,22 @@ const UserSchema = new mongoose.Schema(
       index: true,
     },
 
-    picture: {
-      type: String,
-      default: "",
-    },
-
     role: {
       type: String,
       enum: ["buyer", "seller", "admin"],
       default: "buyer",
     },
+      authProvider: {
+      type: String,
+      enum: ["credentials", "google"],
+      default: "credentials",
+    },
+
+       avatar: {
+      type: String,
+      default: "",
+    },
+
   },
   { timestamps: true }
 );

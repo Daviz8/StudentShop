@@ -2,13 +2,26 @@ import mongoose from "mongoose";
 
 const OrderItemSchema = new mongoose.Schema(
   {
+    itemType: {
+      type: String,
+      enum: ["product", "property"],
+      default: "product",
+    },
+
     product: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Product",
-      required: true,
     },
 
-    name: String,
+    property: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Property",
+    },
+
+    name: {
+      type: String,
+      required: true,
+    },
 
     quantity: {
       type: Number,
@@ -37,6 +50,7 @@ const OrderSchema = new mongoose.Schema(
 
     customerEmail: {
       type: String,
+      default: "",
     },
 
     items: {
@@ -72,8 +86,33 @@ const OrderSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ["pending", "paid", "cancelled"],
+      enum: ["pending", "paid", "failed", "cancelled"],
       default: "pending",
+    },
+
+    paymentProvider: {
+      type: String,
+      default: "paystack",
+    },
+
+    paymentReference: {
+      type: String,
+      index: true,
+      default: "",
+    },
+
+    paymentAccessCode: {
+      type: String,
+      default: "",
+    },
+
+    paidAt: {
+      type: Date,
+    },
+
+    paystackData: {
+      type: Object,
+      default: {},
     },
   },
   { timestamps: true }

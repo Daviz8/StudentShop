@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { OAuth2Client } from "google-auth-library";
-import { connectDB } from "@/lib/db";
-import User from "@/lib/models/User";
-import { signAppToken } from "@/lib/jwt";
+import { connectDB } from "@/src/app/lib/db";
+import User from "@/src/app/lib/models/User";
+import { signAppToken } from "@/src/app/lib/jwt";
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 

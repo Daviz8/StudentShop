@@ -56,6 +56,11 @@ const AppointmentSchema = new mongoose.Schema(
 
 const UserSaleSchema = new mongoose.Schema(
   {
+    submittedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+
     sellerName: {
       type: String,
       required: true,
@@ -68,6 +73,17 @@ const UserSaleSchema = new mongoose.Schema(
 
     sellerEmail: {
       type: String,
+      default: "",
+    },
+
+    cityArea: {
+      type: String,
+      default: "",
+    },
+
+    idType: {
+      type: String,
+      default: "",
     },
 
     gadgetName: {
@@ -80,20 +96,91 @@ const UserSaleSchema = new mongoose.Schema(
       required: true,
     },
 
+    brandModel: {
+      type: String,
+      default: "",
+    },
+
+    colorVariant: {
+      type: String,
+      default: "",
+    },
+
+    serialOrImei: {
+      type: String,
+      default: "",
+    },
+
+    category: {
+      type: String,
+      default: "electronics_gadget",
+    },
+
+    otherCategory: {
+      type: String,
+      default: "",
+    },
+
+    condition: {
+      type: String,
+      enum: ["brand_new", "like_new", "good", "fair", "needs_repair"],
+      default: "good",
+    },
+
     sellerAskingPrice: {
       type: Number,
       required: true,
     },
 
+    faultsAccessoriesReason: {
+      type: String,
+      default: "",
+    },
+
+    additionalNotes: {
+      type: String,
+      default: "",
+    },
+
+    returnPreference: {
+      type: String,
+      enum: ["cash_payout", "store_credit", "swap", "part_payment"],
+      default: "cash_payout",
+    },
+
+    desiredItem: {
+      type: String,
+      default: "",
+    },
+
+    topUpAmount: {
+      type: Number,
+      default: 0,
+    },
+
+    heardFrom: {
+      type: String,
+      default: "",
+    },
+
+    referralCode: {
+      type: String,
+      default: "",
+    },
+
+    referredBy: {
+      type: String,
+      default: "",
+    },
+
+    agreedToTerms: {
+      type: Boolean,
+      default: false,
+    },
+
     images: {
       type: [ImageSchema],
       default: [],
-    },
-
-    condition: {
-      type: String,
-      enum: ["new", "used", "faulty"],
-      default: "used",
     },
 
     status: {
