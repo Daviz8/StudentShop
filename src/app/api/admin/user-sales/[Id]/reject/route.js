@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { connectDB } from "@/lib/db";
-import UserSale from "@/lib/models/UserSale";
-import { deleteCloudinaryImages } from "@/lib/deleteCloudinaryImages";
+import { connectDB } from "@/src/app/lib/db";
+import UserSale from "@/src/app/lib/models/UserSale";
+import { deleteCloudinaryImages } from "@/src/app/lib/deleteCloudinaryImages";
 
 export async function PATCH(request, { params }) {
   try {

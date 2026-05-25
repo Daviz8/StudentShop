@@ -45,7 +45,7 @@ export default async function StorePage() {
             {!user ? (
               <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
                 <Link
-                  href="/signin"
+                  href="/signup"
                   className="w-full rounded-full border border-white px-6 py-3 text-center font-black transition hover:bg-white hover:text-black sm:w-auto"
                 >
                   Sign In

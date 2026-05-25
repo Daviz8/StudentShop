@@ -1,3 +1,8 @@
+
+
+
+
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -10,6 +15,7 @@ import {
   CheckCircle2,
   ImageIcon,
   Loader2,
+  MessageSquare,
   Phone,
   Trash2,
   UserRound,
@@ -37,7 +43,7 @@ export default function AdminSellRequestDetailPage() {
   const getImageUrl = (image) => {
     if (!image) return "";
     if (typeof image === "string") return image;
-    return image.url || "";
+    return image.url || image.secure_url || "";
   };
 
   const formatMoney = (value) => {
@@ -58,12 +64,15 @@ export default function AdminSellRequestDetailPage() {
 
       const data = await res.json();
 
+      console.log("ADMIN_SALE_DETAIL_RESPONSE:", data);
+
       if (!res.ok || !data?.success || !data?.saleRequest) {
         throw new Error(data?.message || "Failed to load request");
       }
 
       setItem(data.saleRequest);
     } catch (err) {
+      console.error("ADMIN_LOAD_SALE_DETAIL_ERROR:", err);
       setError(err.message || "Something went wrong while loading request");
     } finally {
       setLoading(false);
@@ -90,6 +99,7 @@ export default function AdminSellRequestDetailPage() {
         },
         body: JSON.stringify({
           offerPrice,
+          adminOfferPrice: offerPrice,
           message: offerMessage,
         }),
       });
@@ -101,8 +111,10 @@ export default function AdminSellRequestDetailPage() {
       }
 
       alert(data.message || "Offer sent successfully");
+
       setOfferPrice("");
       setOfferMessage("");
+
       await loadItem();
     } catch (err) {
       alert(err.message || "Failed to send offer");
@@ -139,9 +151,11 @@ export default function AdminSellRequestDetailPage() {
       }
 
       alert(data.message || "Appointment scheduled successfully");
+
       setAppointmentDate("");
       setAppointmentLocation("");
       setAppointmentNote("");
+
       await loadItem();
     } catch (err) {
       alert(err.message || "Failed to schedule appointment");
@@ -151,7 +165,7 @@ export default function AdminSellRequestDetailPage() {
   };
 
   const markBought = async () => {
-    const confirmed = confirm("Mark this item as bought and remove it?");
+    const confirmed = confirm("Mark this item as bought?");
     if (!confirmed) return;
 
     try {
@@ -168,6 +182,7 @@ export default function AdminSellRequestDetailPage() {
       }
 
       alert(data.message || "Item marked as bought");
+
       router.push("/admin");
       router.refresh();
     } catch (err) {
@@ -195,6 +210,7 @@ export default function AdminSellRequestDetailPage() {
       }
 
       alert(data.message || "Item rejected successfully");
+
       router.push("/admin");
       router.refresh();
     } catch (err) {
@@ -220,9 +236,11 @@ export default function AdminSellRequestDetailPage() {
       <main className="flex min-h-screen items-center justify-center bg-[#FFC107]/10 px-6">
         <div className="max-w-md rounded-[2rem] bg-white p-8 text-center shadow-sm">
           <XCircle className="mx-auto text-red-600" size={42} />
+
           <h1 className="mt-4 text-2xl font-black text-black">
             Could not load request
           </h1>
+
           <p className="mt-2 text-sm font-semibold text-red-600">{error}</p>
 
           <Link
@@ -245,6 +263,7 @@ export default function AdminSellRequestDetailPage() {
   }
 
   const images = item.images || [];
+
   const canSendOffer =
     !["offer_accepted", "appointment_scheduled", "bought", "rejected"].includes(
       item.status
@@ -274,18 +293,19 @@ export default function AdminSellRequestDetailPage() {
                   </p>
 
                   <h1 className="mt-2 text-3xl font-black text-black">
-                    {item.gadgetName}
+                    {item.gadgetName || item.itemName || "Submitted Item"}
                   </h1>
 
                   <p className="mt-2 text-sm leading-relaxed text-black/60">
                     {item.gadgetDescription ||
                       item.faultsAccessoriesReason ||
+                      item.description ||
                       "No description provided"}
                   </p>
                 </div>
 
                 <span className="h-fit rounded-full bg-black px-4 py-2 text-xs font-black uppercase text-white">
-                  {item.status}
+                  {(item.status || "submitted").replaceAll("_", " ")}
                 </span>
               </div>
 
@@ -295,22 +315,37 @@ export default function AdminSellRequestDetailPage() {
                   value={item.sellerName}
                   icon={<UserRound size={16} />}
                 />
+
                 <InfoItem
                   label="Phone"
                   value={item.sellerPhone}
                   icon={<Phone size={16} />}
                 />
+
+                <InfoItem label="Email" value={item.sellerEmail || "N/A"} />
+
+                <InfoItem
+                  label="City / Area"
+                  value={item.cityArea || "N/A"}
+                />
+
+                <InfoItem label="ID Type" value={item.idType || "N/A"} />
+
+                <InfoItem
+                  label="NIN Number"
+                  value={item.ninNumber || "N/A"}
+                />
+
                 <InfoItem
                   label="Asking Price"
                   value={formatMoney(item.sellerAskingPrice)}
                 />
+
                 <InfoItem
                   label="Negotiation Trials"
                   value={`${item.negotiationCount || 0}/3`}
                 />
-                <InfoItem label="Email" value={item.sellerEmail || "N/A"} />
-                <InfoItem label="City / Area" value={item.cityArea || "N/A"} />
-                <InfoItem label="ID Type" value={item.idType || "N/A"} />
+
                 <InfoItem
                   label="Category"
                   value={
@@ -319,18 +354,22 @@ export default function AdminSellRequestDetailPage() {
                     "N/A"
                   }
                 />
+
                 <InfoItem
                   label="Condition"
                   value={item.condition?.replaceAll("_", " ") || "N/A"}
                 />
+
                 <InfoItem
                   label="Brand / Model"
                   value={item.brandModel || "N/A"}
                 />
+
                 <InfoItem
                   label="Colour / Variant"
                   value={item.colorVariant || "N/A"}
                 />
+
                 <InfoItem
                   label="Serial / IMEI"
                   value={item.serialOrImei || "N/A"}
@@ -342,6 +381,7 @@ export default function AdminSellRequestDetailPage() {
               <div className="rounded-[2rem] bg-white p-6 shadow-sm">
                 <div className="mb-4 flex items-center gap-2">
                   <ImageIcon size={20} />
+
                   <h2 className="text-xl font-black text-black">
                     Uploaded Images
                   </h2>
@@ -363,7 +403,7 @@ export default function AdminSellRequestDetailPage() {
                       >
                         <img
                           src={imageUrl}
-                          alt={`${item.gadgetName} ${index + 1}`}
+                          alt={`Uploaded item ${index + 1}`}
                           className="h-64 w-full object-cover transition hover:scale-105"
                         />
                       </a>
@@ -383,26 +423,28 @@ export default function AdminSellRequestDetailPage() {
                   label="Return Preference"
                   value={item.returnPreference?.replaceAll("_", " ") || "N/A"}
                 />
+
                 <InfoItem
                   label="Desired Item"
                   value={item.desiredItem || "N/A"}
                 />
+
                 <InfoItem
                   label="Top-Up Amount"
                   value={formatMoney(item.topUpAmount)}
                 />
+
                 <InfoItem
                   label="Heard From"
                   value={item.heardFrom?.replaceAll("_", " ") || "N/A"}
                 />
+
                 <InfoItem
                   label="Referral Code"
                   value={item.referralCode || "N/A"}
                 />
-                <InfoItem
-                  label="Referred By"
-                  value={item.referredBy || "N/A"}
-                />
+
+                <InfoItem label="Referred By" value={item.referredBy || "N/A"} />
               </div>
 
               {item.additionalNotes && (
@@ -410,6 +452,7 @@ export default function AdminSellRequestDetailPage() {
                   <p className="text-xs font-black uppercase text-black/40">
                     Additional Notes
                   </p>
+
                   <p className="mt-2 text-sm leading-relaxed text-black/70">
                     {item.additionalNotes}
                   </p>
@@ -424,29 +467,47 @@ export default function AdminSellRequestDetailPage() {
 
               <div className="mt-4 space-y-3">
                 {item.negotiations?.length > 0 ? (
-                  item.negotiations.map((negotiation) => (
+                  item.negotiations.map((negotiation, index) => (
                     <div
-                      key={negotiation._id}
+                      key={negotiation._id || index}
                       className="rounded-2xl border border-black/10 p-4"
                     >
                       <div className="flex items-center justify-between gap-4">
                         <p className="font-black text-black">
-                          Trial {negotiation.trialNumber}
+                          Trial {negotiation.trialNumber || index + 1}
                         </p>
 
                         <span className="rounded-full bg-[#FFC107]/40 px-3 py-1 text-xs font-black uppercase text-black">
-                          {negotiation.sellerResponse}
+                          {negotiation.sellerResponse || "pending"}
                         </span>
                       </div>
 
                       <p className="mt-2 text-2xl font-black text-black">
-                        {formatMoney(negotiation.adminOfferPrice)}
+                        Admin Offer: {formatMoney(negotiation.adminOfferPrice)}
                       </p>
 
                       {negotiation.message && (
                         <p className="mt-2 text-sm text-black/60">
                           {negotiation.message}
                         </p>
+                      )}
+
+                      {Number(negotiation.counterPrice || 0) > 0 && (
+                        <div className="mt-3 rounded-2xl bg-[#FFC107]/20 p-3">
+                          <p className="text-xs font-black uppercase text-black/40">
+                            User Counter Price
+                          </p>
+
+                          <p className="mt-1 text-xl font-black text-black">
+                            {formatMoney(negotiation.counterPrice)}
+                          </p>
+
+                          {negotiation.counterMessage && (
+                            <p className="mt-2 text-sm text-black/60">
+                              {negotiation.counterMessage}
+                            </p>
+                          )}
+                        </div>
                       )}
                     </div>
                   ))
@@ -462,9 +523,23 @@ export default function AdminSellRequestDetailPage() {
           <aside className="space-y-6">
             {canSendOffer && (
               <div className="rounded-[2rem] bg-white p-6 shadow-sm">
-                <h2 className="text-xl font-black text-black">
-                  Send Admin Offer
-                </h2>
+                <div className="flex items-center gap-2">
+                  <MessageSquare size={20} />
+
+                  <h2 className="text-xl font-black text-black">
+                    Send Admin Offer
+                  </h2>
+                </div>
+
+                {item.status === "counter_price_sent" && (
+                  <div className="mt-4 rounded-2xl bg-[#FFC107]/20 p-4">
+                    <p className="text-sm font-black text-black">
+                      User sent a counter price. Review it in the negotiation
+                      history and send a new offer if you agree or want to
+                      continue negotiation.
+                    </p>
+                  </div>
+                )}
 
                 <p className="mt-2 text-sm text-black/50">
                   You can send a maximum of 3 offers. Current trial count is{" "}
@@ -501,6 +576,7 @@ export default function AdminSellRequestDetailPage() {
               <div className="rounded-[2rem] bg-white p-6 shadow-sm">
                 <div className="flex items-center gap-2">
                   <CalendarDays size={20} />
+
                   <h2 className="text-xl font-black text-black">
                     Schedule Inspection
                   </h2>

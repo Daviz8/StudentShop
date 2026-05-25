@@ -4,8 +4,7 @@ const UserSchema = new mongoose.Schema(
   {
     googleId: {
       type: String,
-      required: true,
-      unique: true,
+      default: "",
       index: true,
     },
 
@@ -18,25 +17,32 @@ const UserSchema = new mongoose.Schema(
       type: String,
       required: true,
       lowercase: true,
+      trim: true,
+      unique: true,
       index: true,
     },
 
-    role: {
-      type: String,
-      enum: ["buyer", "seller", "admin"],
-      default: "buyer",
-    },
-      authProvider: {
-      type: String,
-      enum: ["credentials", "google"],
-      default: "credentials",
-    },
-
-       avatar: {
+    password: {
       type: String,
       default: "",
     },
 
+    phone: {
+      type: String,
+      default: "",
+    },
+
+    picture: {
+      type: String,
+      default: "",
+    },
+
+    role: {
+      type: String,
+      enum: ["user", "admin"],
+      default: "user",
+      index: true,
+    },
   },
   { timestamps: true }
 );

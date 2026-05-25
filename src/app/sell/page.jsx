@@ -6,7 +6,7 @@ export default async function SellPage() {
   const user = await getCurrentUser();
 
   if (!user) {
-    redirect("/signin");
+    redirect("/signup");
   }
 
   return (

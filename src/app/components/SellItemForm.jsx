@@ -343,9 +343,7 @@ export default function SellItemForm() {
             required
           >
             <option value="brand_new">Brand new unused</option>
-            <option value="like_new">Like new</option>
             <option value="good">Good — minor wear</option>
-            <option value="fair">Fair — visible wear</option>
             <option value="needs_repair">Needs repair</option>
           </select>
 
@@ -435,9 +433,7 @@ export default function SellItemForm() {
             required
           >
             <option value="cash_payout">Cash payout</option>
-            <option value="store_credit">Store credit</option>
             <option value="swap">Swap for another item</option>
-            <option value="part_payment">Part-payment toward new item</option>
           </select>
 
           <input

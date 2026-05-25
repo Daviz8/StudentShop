@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
+import mongoose from "mongoose";
 import { connectDB } from "@/src/app/lib/db";
 import UserSale from "@/src/app/lib/models/UserSale";
 import { getCurrentUser } from "@/src/app/lib/getCurrentUser";
+
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
@@ -11,7 +14,7 @@ export async function GET() {
       return NextResponse.json(
         {
           success: false,
-          message: "You must be signed in to view your notifications.",
+          message: "You must be signed in to view your sale requests.",
         },
         { status: 401 }
       );
@@ -19,10 +22,56 @@ export async function GET() {
 
     await connectDB();
 
+    const userId = String(user.id || "");
+    const userEmail = String(user.email || "").trim().toLowerCase();
+
+    const ownershipFilters = [];
+
+    if (userId && mongoose.Types.ObjectId.isValid(userId)) {
+      ownershipFilters.push({
+        submittedBy: new mongoose.Types.ObjectId(userId),
+      });
+    }
+
+    if (userEmail) {
+      ownershipFilters.push({
+        submittedByEmail: userEmail,
+      });
+
+      ownershipFilters.push({
+        sellerEmail: userEmail,
+      });
+    }
+
     const requests = await UserSale.find({
-      submittedBy: user.id,
+      $and: [
+        {
+          $or:
+            ownershipFilters.length > 0
+              ? ownershipFilters
+              : [
+                  {
+                    _id: null,
+                  },
+                ],
+        },
+
+        /*
+          Important:
+          Hide rejected requests from user side.
+          Admin can still see them from /api/user-sales or admin dashboard.
+        */
+        {
+          status: {
+            $ne: "rejected",
+          },
+        },
+      ],
     })
-      .sort({ updatedAt: -1, createdAt: -1 })
+      .sort({
+        updatedAt: -1,
+        createdAt: -1,
+      })
       .lean();
 
     return NextResponse.json({
@@ -30,12 +79,12 @@ export async function GET() {
       requests: JSON.parse(JSON.stringify(requests)),
     });
   } catch (error) {
-    console.error("GET_MY_SELL_REQUESTS_ERROR:", error);
+    console.error("GET_MY_USER_SALES_ERROR:", error);
 
     return NextResponse.json(
       {
         success: false,
-        message: error.message || "Failed to fetch your requests.",
+        message: error.message || "Failed to fetch your sale requests.",
       },
       { status: 500 }
     );

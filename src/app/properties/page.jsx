@@ -64,7 +64,7 @@ export default async function PropertiesPage() {
                 href={
                   user
                     ? "/cart"
-                    : "/signin"
+                    : "/signup"
                 }
                 className="rounded-full bg-[#FFA500] px-6 py-3 text-center font-black text-black hover:bg-[#FFC107]"
               >

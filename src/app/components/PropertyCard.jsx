@@ -16,7 +16,7 @@ export default function PropertyCard({ property, isAuthenticated }) {
 
   const addToCart = () => {
     if (!isAuthenticated) {
-      router.push(`/signin?returnTo=/properties/${propertyId}`);
+      router.push(`/signup?returnTo=/properties/${propertyId}`);
       return;
     }
 

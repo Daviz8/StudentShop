@@ -83,7 +83,7 @@ export default function MyRequestsPage() {
           <p className="mt-3 text-sm font-bold text-red-600">{error}</p>
 
           <Link
-            href="/signin"
+            href="/signup"
             className="mt-6 inline-flex rounded-full bg-black px-6 py-3 font-black text-white"
           >
             Sign In
