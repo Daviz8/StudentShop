@@ -2,7 +2,7 @@ import Link from "next/link";
 import { CheckCircle2, XCircle } from "lucide-react";
 import { verifyPaystackTransaction } from "@/lib/paystack";
 import { connectDB } from "../../lib/db";
-import Order from "@/lib/models/Order";
+import Order from "../../lib/models/Order";
 
 export default async function PaymentCallbackPage({ searchParams }) {
   const params = await searchParams;

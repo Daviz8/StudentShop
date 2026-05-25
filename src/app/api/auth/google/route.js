@@ -3,6 +3,7 @@ import { OAuth2Client } from "google-auth-library";
 import { connectDB } from "@/src/app/lib/db";
 import User from "@/src/app/lib/models/User";
 import { signAppToken } from "@/src/app/lib/jwt";
+import { getRoleForEmail, normalizeEmail } from "@/src/app/lib/admin";
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -11,7 +12,6 @@ export async function POST(request) {
     await connectDB();
 
     const body = await request.json();
-
     const credential = body.credential;
 
     if (!credential) {
@@ -42,7 +42,7 @@ export async function POST(request) {
     }
 
     const googleId = payload.sub;
-    const email = payload.email;
+    const email = normalizeEmail(payload.email);
     const name = payload.name || "Google User";
     const picture = payload.picture || "";
 
@@ -56,14 +56,17 @@ export async function POST(request) {
       );
     }
 
+    const role = getRoleForEmail(email);
+
     const user = await User.findOneAndUpdate(
-      { googleId },
+      { email },
       {
         $set: {
           googleId,
           email,
           name,
           picture,
+          role,
         },
       },
       {
@@ -83,7 +86,7 @@ export async function POST(request) {
 
     const response = NextResponse.json({
       success: true,
-      message: "Login successful",
+      message: role === "admin" ? "Admin login successful" : "Login successful",
       user: {
         id: user._id.toString(),
         email: user.email,
@@ -103,7 +106,7 @@ export async function POST(request) {
 
     return response;
   } catch (error) {
-    console.error("GOOGLE_LOGIN_ERROR", error);
+    console.error("GOOGLE_LOGIN_ERROR:", error);
 
     return NextResponse.json(
       {

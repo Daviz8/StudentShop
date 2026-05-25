@@ -1,20 +1,59 @@
 import { NextResponse } from "next/server";
+import mongoose from "mongoose";
 import { connectDB } from "@/src/app/lib/db";
 import UserSale from "@/src/app/lib/models/UserSale";
-export async function PATCH(request, { params }) {
+import { getCurrentUser } from "@/src/app/lib/getCurrentUser";
+
+
+function isAdmin(user) {
+  return (
+    user?.role === "admin" ||
+    String(user?.email || "").trim().toLowerCase() === MAIN_ADMIN_EMAIL
+  );
+}
+
+export async function PATCH(request, context) {
   try {
-    await connectDB();
+    const user = await getCurrentUser();
 
-    const { id } = await params;
-    const body = await request.json();
-
-    const offerPrice = Number(body.offerPrice);
-
-    if (!offerPrice || offerPrice <= 0) {
+    if (!user || !isAdmin(user)) {
       return NextResponse.json(
         {
           success: false,
-          message: "A valid offer price is required",
+          message: "Admin access only.",
+        },
+        { status: 403 }
+      );
+    }
+
+    await connectDB();
+
+    const params = await context.params;
+    const id = params?.id;
+
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Invalid sale request ID.",
+        },
+        { status: 400 }
+      );
+    }
+
+    const body = await request.json();
+
+    const adminOfferPrice = Number(
+      body.adminOfferPrice || body.offerPrice || 0
+    );
+
+    const message = String(body.message || "").trim();
+
+    if (!adminOfferPrice || adminOfferPrice <= 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Valid offer price is required.",
         },
         { status: 400 }
       );
@@ -26,66 +65,62 @@ export async function PATCH(request, { params }) {
       return NextResponse.json(
         {
           success: false,
-          message: "Sale request not found",
+          message: "Sale request not found.",
         },
         { status: 404 }
       );
     }
 
-    if (
-      ["offer_accepted", "appointment_scheduled", "bought", "rejected"].includes(
-        saleRequest.status
-      )
-    ) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: `Cannot negotiate because status is ${saleRequest.status}`,
-        },
-        { status: 400 }
-      );
-    }
+    const negotiationCount = Number(saleRequest.negotiationCount || 0);
 
-    if (saleRequest.negotiationCount >= 3) {
+    if (negotiationCount >= 3) {
       saleRequest.status = "rejected";
       await saleRequest.save();
 
-      await UserSale.findByIdAndDelete(id);
-
       return NextResponse.json(
         {
           success: false,
-          message:
-            "Negotiation limit reached. Item has been rejected and deleted.",
+          message: "Negotiation limit reached. This request is rejected.",
         },
         { status: 400 }
       );
     }
 
-    const nextTrial = saleRequest.negotiationCount + 1;
+    // Close any previous pending offer before adding a new one
+    saleRequest.negotiations = (saleRequest.negotiations || []).map((item) => {
+      if (item.sellerResponse === "pending") {
+        item.sellerResponse = "rejected";
+        item.respondedAt = new Date();
+      }
 
-    saleRequest.negotiations.push({
-      trialNumber: nextTrial,
-      adminOfferPrice: offerPrice,
-      message: body.message || "",
-      sellerResponse: "pending",
+      return item;
     });
 
-    saleRequest.negotiationCount = nextTrial;
+    saleRequest.negotiationCount = negotiationCount + 1;
     saleRequest.status = "negotiating";
+
+    saleRequest.negotiations.push({
+      trialNumber: saleRequest.negotiationCount,
+      adminOfferPrice,
+      message,
+      sellerResponse: "pending",
+      createdAt: new Date(),
+    });
 
     await saleRequest.save();
 
     return NextResponse.json({
       success: true,
-      message: `Offer trial ${nextTrial} sent successfully`,
-      saleRequest,
+      message: "Offer sent successfully.",
+      saleRequest: JSON.parse(JSON.stringify(saleRequest)),
     });
   } catch (error) {
+    console.error("ADMIN_SEND_OFFER_ERROR:", error);
+
     return NextResponse.json(
       {
         success: false,
-        message: error.message || "Failed to send offer",
+        message: error.message || "Failed to send offer.",
       },
       { status: 500 }
     );

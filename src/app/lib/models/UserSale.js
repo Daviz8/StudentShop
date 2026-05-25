@@ -1,20 +1,5 @@
 import mongoose from "mongoose";
 
-const ImageSchema = new mongoose.Schema(
-  {
-    url: {
-      type: String,
-      required: true,
-    },
-
-    publicId: {
-      type: String,
-      required: true,
-    },
-  },
-  { _id: false }
-);
-
 const NegotiationSchema = new mongoose.Schema(
   {
     trialNumber: {
@@ -38,6 +23,16 @@ const NegotiationSchema = new mongoose.Schema(
       default: "pending",
     },
 
+    counterPrice: {
+      type: Number,
+      default: 0,
+    },
+
+    counterMessage: {
+      type: String,
+      default: "",
+    },
+
     respondedAt: {
       type: Date,
     },
@@ -47,9 +42,34 @@ const NegotiationSchema = new mongoose.Schema(
 
 const AppointmentSchema = new mongoose.Schema(
   {
-    date: Date,
-    location: String,
-    note: String,
+    date: {
+      type: Date,
+    },
+
+    location: {
+      type: String,
+      default: "",
+    },
+
+    note: {
+      type: String,
+      default: "",
+    },
+  },
+  { _id: false }
+);
+
+const ImageSchema = new mongoose.Schema(
+  {
+    url: {
+      type: String,
+      required: true,
+    },
+
+    publicId: {
+      type: String,
+      default: "",
+    },
   },
   { _id: false }
 );
@@ -59,6 +79,15 @@ const UserSaleSchema = new mongoose.Schema(
     submittedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
+      index: true,
+    },
+
+    submittedByEmail: {
+      type: String,
+      default: "",
+      lowercase: true,
+      trim: true,
+      index: true,
     },
 
     sellerName: {
@@ -74,6 +103,8 @@ const UserSaleSchema = new mongoose.Schema(
     sellerEmail: {
       type: String,
       default: "",
+      lowercase: true,
+      trim: true,
     },
 
     cityArea: {
@@ -86,6 +117,11 @@ const UserSaleSchema = new mongoose.Schema(
       default: "",
     },
 
+    ninNumber: {
+      type: String,
+      default: "",
+    },
+
     gadgetName: {
       type: String,
       required: true,
@@ -93,7 +129,7 @@ const UserSaleSchema = new mongoose.Schema(
 
     gadgetDescription: {
       type: String,
-      required: true,
+      default: "",
     },
 
     brandModel: {
@@ -188,19 +224,19 @@ const UserSaleSchema = new mongoose.Schema(
       enum: [
         "submitted",
         "negotiating",
+        "counter_price_sent",
         "offer_accepted",
         "appointment_scheduled",
-        "inspection_passed",
         "bought",
         "rejected",
       ],
       default: "submitted",
+      index: true,
     },
 
     negotiationCount: {
       type: Number,
       default: 0,
-      max: 3,
     },
 
     negotiations: {
@@ -210,9 +246,13 @@ const UserSaleSchema = new mongoose.Schema(
 
     acceptedPrice: {
       type: Number,
+      default: 0,
     },
 
-    appointment: AppointmentSchema,
+    appointment: {
+      type: AppointmentSchema,
+      default: {},
+    },
   },
   { timestamps: true }
 );

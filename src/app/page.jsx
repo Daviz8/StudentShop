@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
+import {useState } from "react";
 
 const gadgets = [
   { label: "Laptop", emoji: "💻", top: "18%", left: "10%" },
@@ -12,7 +13,12 @@ const gadgets = [
 
 export default function Home() {
   const router = useRouter();
+  const randomRoute = () => {
+  const routes = ["/store", "/properties"];
+  const randomIndex = Math.floor(  Math.random() * routes.length );
 
+  router.push(routes[randomIndex]);
+};
   return (
     <main className="min-h-screen overflow-hidden bg-gradient-to-br from-[#FFA500] via-[#FFC107] to-[#f59e0b] text-black">
       <section className="relative mx-auto flex min-h-screen max-w-7xl flex-col items-center justify-center px-5 py-10 lg:grid lg:grid-cols-2 lg:gap-10">
@@ -120,12 +126,13 @@ export default function Home() {
               Get Started
             </button>
 
-            <button
-              onClick={() => router.push("/store")}
-              className="rounded-2xl border-2 border-black bg-white/80 px-8 py-4 text-base font-black text-black shadow-xl backdrop-blur transition hover:scale-105 cursor-pointer"
-            >
-              Explore Gadgets
-            </button>
+           <button
+  onClick={randomRoute}
+  className="rounded-2xl border-2 border-black bg-white/80 px-8 py-4 text-base font-black text-black shadow-xl backdrop-blur transition hover:scale-105 cursor-pointer"
+>
+  Explore Gadgets & Properties
+</button>
+           
           </motion.div>
         </div>
 
@@ -154,7 +161,7 @@ export default function Home() {
           <img
             src="/images/hero-bg.webp"
             alt="Student Shop Nigeria"
-            className="max-h-[300px] w-full max-w-md object-contain drop-shadow-2xl rounded-md"
+            className="max-h-[300px] w-full max-w-md object-contain drop-shadow-2xl rounded-md hidden  md:block "
           />
 
           <motion.div

@@ -1,31 +1,46 @@
 import { NextResponse } from "next/server";
 import mongoose from "mongoose";
-import { connectDB } from "@/src/app/lib/db";
-import Product from "@/src/app/lib/models/Product";
+import { connectDB } from "@/lib/db";
+import Product from "@/lib/models/Product";
 
-export async function GET(request, { params }) {
+export const dynamic = "force-dynamic";
+
+export async function GET(request, context) {
   try {
     await connectDB();
 
-    const { id } = await params;
+    const params = await context.params;
+    const id = params?.id;
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
+    if (!id) {
       return NextResponse.json(
         {
           success: false,
-          message: "Invalid product ID",
+          message: "Product ID is required",
         },
         { status: 400 }
       );
     }
 
-    const product = await Product.findById(id).lean();
+    let product = null;
 
-    if (!property) {
+    // If the id is a MongoDB ObjectId
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      product = await Product.findById(id).lean();
+    }
+
+    // Optional fallback if your product has slug or custom id field
+    if (!product) {
+      product = await Product.findOne({
+        $or: [{ slug: id }, { id: id }],
+      }).lean();
+    }
+
+    if (!product) {
       return NextResponse.json(
         {
           success: false,
-          message: "product not found",
+          message: "Product not found",
         },
         { status: 404 }
       );
@@ -36,10 +51,12 @@ export async function GET(request, { params }) {
       product: JSON.parse(JSON.stringify(product)),
     });
   } catch (error) {
+    console.error("GET_PRODUCT_DETAIL_ERROR:", error);
+
     return NextResponse.json(
       {
         success: false,
-        message: error.message || "Failed to fetch property",
+        message: error.message || "Failed to fetch product",
       },
       { status: 500 }
     );

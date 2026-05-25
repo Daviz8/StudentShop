@@ -24,6 +24,10 @@ export default function UserSellRequestPage() {
   const [responding, setResponding] = useState(false);
   const [error, setError] = useState("");
 
+  const [showCounterForm, setShowCounterForm] = useState(false);
+  const [counterPrice, setCounterPrice] = useState("");
+  const [counterMessage, setCounterMessage] = useState("");
+
   const loadItem = async () => {
     if (!id) return;
 
@@ -41,6 +45,16 @@ export default function UserSellRequestPage() {
         throw new Error(data?.message || "Failed to load request");
       }
 
+      /*
+        If this request is already rejected,
+        do not keep showing it to the user.
+      */
+      if (data.saleRequest.status === "rejected") {
+        router.push("/my-requests");
+        router.refresh();
+        return;
+      }
+
       setItem(data.saleRequest);
     } catch (err) {
       setError(err.message || "Something went wrong while loading request");
@@ -53,11 +67,20 @@ export default function UserSellRequestPage() {
     loadItem();
   }, [id]);
 
-  const respondToOffer = async (response) => {
+  const respondToOffer = async (response, withCounter = false) => {
+    if (response === "rejected" && withCounter) {
+      if (!counterPrice || Number(counterPrice) <= 0) {
+        alert("Please enter a valid counter price.");
+        return;
+      }
+    }
+
     const confirmed = confirm(
       response === "accepted"
         ? "Accept this admin offer?"
-        : "Reject this admin offer?"
+        : withCounter
+          ? "Reject this offer and send your counter price?"
+          : "Reject this admin offer without sending a counter price?"
     );
 
     if (!confirmed) return;
@@ -72,6 +95,8 @@ export default function UserSellRequestPage() {
         },
         body: JSON.stringify({
           response,
+          counterPrice: withCounter ? counterPrice : "",
+          counterMessage: withCounter ? counterMessage : "",
         }),
       });
 
@@ -83,7 +108,15 @@ export default function UserSellRequestPage() {
 
       alert(data.message || "Response sent successfully");
 
-      if (response === "rejected" && Number(item?.negotiationCount || 0) >= 3) {
+      setShowCounterForm(false);
+      setCounterPrice("");
+      setCounterMessage("");
+
+      /*
+        If user rejected final offer:
+        leave the detail page and remove it from user-side view.
+      */
+      if (data.finalRejected || data.saleRequest?.status === "rejected") {
         router.push("/my-requests");
         router.refresh();
         return;
@@ -113,7 +146,7 @@ export default function UserSellRequestPage() {
   const getImageUrl = (image) => {
     if (!image) return "";
     if (typeof image === "string") return image;
-    return image.url || "";
+    return image.url || image.secure_url || "";
   };
 
   if (loading) {
@@ -169,6 +202,12 @@ export default function UserSellRequestPage() {
 
   const latestOffer = item?.negotiations?.[item.negotiations.length - 1];
   const hasPendingOffer = latestOffer?.sellerResponse === "pending";
+
+  const isFinalAdminOffer =
+    Number(latestOffer?.trialNumber || item?.negotiationCount || 0) >= 3;
+
+  const canUserCounter = hasPendingOffer && !isFinalAdminOffer;
+
   const images = item?.images || [];
   const hasAppointment = !!item?.appointment?.date;
 
@@ -188,11 +227,13 @@ export default function UserSellRequestPage() {
             Admin Offer
           </p>
 
-          <h1 className="mt-3 text-4xl font-black">{item.gadgetName}</h1>
+          <h1 className="mt-3 text-4xl font-black">
+            {item.gadgetName || "Submitted Item"}
+          </h1>
 
           <p className="mt-3 text-white/60">
-            View the admin price offer, accept or reject it, and check your
-            scheduled inspection date.
+            View the admin price offer, accept it, or reject it and send your
+            counter price.
           </p>
         </div>
 
@@ -202,7 +243,10 @@ export default function UserSellRequestPage() {
               <h2 className="text-xl font-black text-black">Your Request</h2>
 
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                <Info label="Status" value={item.status?.replaceAll("_", " ")} />
+                <Info
+                  label="Status"
+                  value={item.status?.replaceAll("_", " ") || "submitted"}
+                />
 
                 <Info
                   label="Your Asking Price"
@@ -306,27 +350,119 @@ export default function UserSellRequestPage() {
                     Response: {latestOffer.sellerResponse}
                   </p>
 
-                  {hasPendingOffer && (
-                    <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                      <button
-                        type="button"
-                        onClick={() => respondToOffer("accepted")}
-                        disabled={responding}
-                        className="flex items-center justify-center gap-2 rounded-2xl bg-green-600 px-5 py-4 font-black text-white disabled:opacity-60"
-                      >
-                        <CheckCircle2 size={18} />
-                        Accept
-                      </button>
+                  {Number(latestOffer.counterPrice || 0) > 0 && (
+                    <div className="mt-4 rounded-2xl bg-white p-4">
+                      <p className="text-xs font-black uppercase text-black/40">
+                        Your Counter Price
+                      </p>
 
-                      <button
-                        type="button"
-                        onClick={() => respondToOffer("rejected")}
-                        disabled={responding}
-                        className="flex items-center justify-center gap-2 rounded-2xl bg-red-600 px-5 py-4 font-black text-white disabled:opacity-60"
-                      >
-                        <XCircle size={18} />
-                        Reject
-                      </button>
+                      <p className="mt-1 text-2xl font-black text-black">
+                        {formatMoney(latestOffer.counterPrice)}
+                      </p>
+
+                      {latestOffer.counterMessage && (
+                        <p className="mt-2 text-sm text-black/60">
+                          {latestOffer.counterMessage}
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {hasPendingOffer && (
+                    <div className="mt-5 space-y-4">
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <button
+                          type="button"
+                          onClick={() => respondToOffer("accepted")}
+                          disabled={responding}
+                          className="flex items-center justify-center gap-2 rounded-2xl bg-green-600 px-5 py-4 font-black text-white disabled:opacity-60"
+                        >
+                          <CheckCircle2 size={18} />
+                          Accept
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (canUserCounter) {
+                              setShowCounterForm(true);
+                              return;
+                            }
+
+                            respondToOffer("rejected", false);
+                          }}
+                          disabled={responding}
+                          className="flex items-center justify-center gap-2 rounded-2xl bg-red-600 px-5 py-4 font-black text-white disabled:opacity-60"
+                        >
+                          <XCircle size={18} />
+                          {isFinalAdminOffer ? "Reject Final Offer" : "Reject"}
+                        </button>
+                      </div>
+
+                      {isFinalAdminOffer && (
+                        <div className="rounded-2xl bg-red-50 p-4">
+                          <p className="text-sm font-black text-red-700">
+                            This is the admin&apos;s 3rd and final offer.
+                          </p>
+
+                          <p className="mt-1 text-xs font-semibold text-red-700/70">
+                            You can accept or reject it, but counter price is
+                            now closed.
+                          </p>
+                        </div>
+                      )}
+
+                      {showCounterForm && canUserCounter && (
+                        <div className="rounded-2xl border border-black/10 bg-white p-4">
+                          <p className="font-black text-black">
+                            Send Counter Price
+                          </p>
+
+                          <p className="mt-1 text-sm text-black/50">
+                            Enter the price you want to send back to admin after
+                            rejecting their offer.
+                          </p>
+
+                          <input
+                            type="number"
+                            value={counterPrice}
+                            onChange={(e) => setCounterPrice(e.target.value)}
+                            placeholder="Enter your counter price"
+                            className="mt-4 w-full rounded-2xl border border-black/10 px-4 py-3 outline-none focus:border-[#FFA500]"
+                          />
+
+                          <textarea
+                            value={counterMessage}
+                            onChange={(e) => setCounterMessage(e.target.value)}
+                            placeholder="Optional message to admin"
+                            className="mt-3 min-h-24 w-full rounded-2xl border border-black/10 px-4 py-3 outline-none focus:border-[#FFA500]"
+                          />
+
+                          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                respondToOffer("rejected", true)
+                              }
+                              disabled={responding}
+                              className="rounded-2xl bg-[#FFA500] px-5 py-4 font-black text-black hover:bg-[#FFC107] disabled:opacity-60"
+                            >
+                              Send Counter Price
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                respondToOffer("rejected", false)
+                              }
+                              disabled={responding}
+                              className="rounded-2xl border border-black/10 px-5 py-4 font-black text-black hover:bg-black hover:text-white disabled:opacity-60"
+                            >
+                              Reject Without Counter
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -336,6 +472,7 @@ export default function UserSellRequestPage() {
             <div className="rounded-[2rem] bg-white p-6 shadow-sm">
               <div className="flex items-center gap-2">
                 <CalendarDays size={20} />
+
                 <h2 className="text-xl font-black text-black">
                   Scheduled Inspection
                 </h2>
@@ -394,14 +531,14 @@ export default function UserSellRequestPage() {
                 </h2>
 
                 <div className="mt-4 space-y-3">
-                  {item.negotiations.map((offer) => (
+                  {item.negotiations.map((offer, index) => (
                     <div
-                      key={offer._id}
+                      key={offer._id || index}
                       className="rounded-2xl border border-black/10 p-4"
                     >
                       <div className="flex items-center justify-between gap-4">
                         <p className="font-black text-black">
-                          Trial {offer.trialNumber}
+                          Trial {offer.trialNumber || index + 1}
                         </p>
 
                         <span className="rounded-full bg-black px-3 py-1 text-xs font-black uppercase text-white">
@@ -410,12 +547,24 @@ export default function UserSellRequestPage() {
                       </div>
 
                       <p className="mt-2 text-2xl font-black text-black">
-                        {formatMoney(offer.adminOfferPrice)}
+                        Admin: {formatMoney(offer.adminOfferPrice)}
                       </p>
+
+                      {Number(offer.counterPrice || 0) > 0 && (
+                        <p className="mt-2 text-lg font-black text-[#e09200]">
+                          You countered: {formatMoney(offer.counterPrice)}
+                        </p>
+                      )}
 
                       {offer.message && (
                         <p className="mt-2 text-sm text-black/60">
                           {offer.message}
+                        </p>
+                      )}
+
+                      {offer.counterMessage && (
+                        <p className="mt-2 rounded-2xl bg-[#FFC107]/20 p-3 text-sm text-black/70">
+                          {offer.counterMessage}
                         </p>
                       )}
                     </div>
