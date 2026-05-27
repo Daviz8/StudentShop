@@ -2,23 +2,24 @@
 
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
-import {useState } from "react";
+import { useState } from "react";
 
+// Adjusted coordinates to wrap closely around the image container on lg screens
 const gadgets = [
-  { label: "Laptop", emoji: "💻", top: "18%", left: "10%" },
-  { label: "Phone", emoji: "📱", top: "20%", right: "12%" },
-  { label: "Tablet", emoji: "📟", bottom: "24%", left: "12%" },
-  { label: "Headset", emoji: "🎧", bottom: "18%", right: "15%" },
+  { label: "Laptop", emoji: "💻", top: "-10%", left: "-10%" },
+  { label: "Phone", emoji: "📱", top: "-5%", right: "-10%" },
+  { label: "Tablet", emoji: "📟", bottom: "-10%", left: "-5%" },
+  { label: "Headset", emoji: "🎧", bottom: "-5%", right: "-10%" },
 ];
 
 export default function Home() {
   const router = useRouter();
   const randomRoute = () => {
-  const routes = ["/store", "/properties"];
-  const randomIndex = Math.floor(  Math.random() * routes.length );
+    const routes = ["/store", "/properties"];
+    const randomIndex = Math.floor(Math.random() * routes.length);
+    router.push(routes[randomIndex]);
+  };
 
-  router.push(routes[randomIndex]);
-};
   return (
     <main className="min-h-screen overflow-hidden bg-gradient-to-br from-[#FFA500] via-[#FFC107] to-[#f59e0b] text-black">
       <section className="relative mx-auto flex min-h-screen max-w-7xl flex-col items-center justify-center px-5 py-10 lg:grid lg:grid-cols-2 lg:gap-10">
@@ -30,31 +31,6 @@ export default function Home() {
           transition={{ duration: 1.2 }}
           className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.7),transparent_45%)]"
         />
-
-        {/* Floating Gadgets */}
-        {gadgets.map((item, index) => (
-          <motion.div
-            key={item.label}
-            className="absolute z-10 flex h-28 w-28 items-center justify-center rounded-2xl text-3xl shadow-xl backdrop-blur bg-white/10"
-            style={{
-              top: item.top,
-              left: item.left,
-              right: item.right,
-              bottom: item.bottom,
-            }}
-            animate={{
-              y: [0, -18, 0],
-              rotate: [0, 8, -8, 0],
-            }}
-            transition={{
-              duration: 3 + index,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-          >
-            {item.emoji}
-          </motion.div>
-        ))}
 
         {/* Text and CTAs */}
         <div className="relative z-20 order-2 mt-8 text-center lg:order-1 lg:mt-0 lg:text-left">
@@ -126,17 +102,16 @@ export default function Home() {
               Get Started
             </button>
 
-           <button
-  onClick={randomRoute}
-  className="rounded-2xl border-2 border-black bg-white/80 px-8 py-4 text-base font-black text-black shadow-xl backdrop-blur transition hover:scale-105 cursor-pointer"
->
-  Explore Gadgets & Properties
-</button>
-           
+            <button
+              onClick={randomRoute}
+              className="rounded-2xl border-2 border-black bg-white/80 px-8 py-4 text-base font-black text-black shadow-xl backdrop-blur transition hover:scale-105 cursor-pointer"
+            >
+              Explore Gadgets & Properties
+            </button>
           </motion.div>
         </div>
 
-        {/* Hero Image Section */}
+        {/* Hero Image Section & Floating Gadgets */}
         <motion.div
           initial={{ opacity: 0, scale: 0.85, rotate: -4 }}
           animate={{
@@ -156,12 +131,38 @@ export default function Home() {
               ease: "easeInOut",
             },
           }}
-          className="relative z-20 order-1 flex justify-center lg:order-2"
+          className="relative z-20 order-1 flex justify-center lg:order-2 w-full max-w-md mx-auto"
         >
+          {/* Floating Gadgets mapped directly around this container element */}
+          {gadgets.map((item, index) => (
+            <motion.div
+              key={item.label}
+              // lg:absolute changes relative behavior to wrap closely around the image container on desktop
+              className="absolute lg:absolute z-10 flex h-20 w-20 md:h-24 md:w-24 lg:h-28 lg:w-28 items-center justify-center rounded-2xl text-2xl md:text-3xl shadow-xl backdrop-blur bg-white/10"
+              style={{
+                top: item.top,
+                left: item.left,
+                right: item.right,
+                bottom: item.bottom,
+              }}
+              animate={{
+                y: [0, -15, 0],
+                rotate: [0, 10, -10, 0],
+              }}
+              transition={{
+                duration: 2.5 + index,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+            >
+              {item.emoji}
+            </motion.div>
+          ))}
+
           <img
             src="/images/hero-bg.webp"
             alt="Student Shop Nigeria"
-            className="max-h-[300px] w-full max-w-md object-contain drop-shadow-2xl rounded-md hidden  md:block "
+            className="max-h-[300px] w-full max-w-md object-contain drop-shadow-2xl rounded-md hidden md:block"
           />
 
           <motion.div
