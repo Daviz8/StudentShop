@@ -65,7 +65,7 @@ async function seed() {
         condition: "verified",
         price: 280000,
         stock: 1,
-        images: ["https://images.unsplash.com/photo-1510557880182-3d4d3cba35a5?w=1200"],
+        images: "/images/iphone_11.png",
         isActive: true,
       },
       {
@@ -85,7 +85,7 @@ async function seed() {
         condition: "verified",
         price: 350000,
         stock: 2,
-        images: ["https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=1200"],
+        images: "/images/iphone-12-pro-max.jpg",
         isActive: true,
       },
       {
@@ -95,7 +95,7 @@ async function seed() {
         condition: "verified",
         price: 520000,
         stock: 1,
-        images: ["https://images.unsplash.com/photo-1632661674596-df8be070a5c5?w=1200"],
+        images: "/images/Phone-13-Pro.png",
         isActive: true,
       },
       {
@@ -105,7 +105,7 @@ async function seed() {
         condition: "verified",
         price: 600000,
         stock: 1,
-        images: ["https://images.unsplash.com/photo-1639556184518-e366da91550c?w=1200"],
+        images: "/images/iphone-13-pro-max.jpeg",
         isActive: true,
       },
       {
@@ -125,7 +125,7 @@ async function seed() {
         condition: "brand_new",
         price: 165000,
         stock: 1,
-        images: ["https://images.unsplash.com/photo-1523206489230-c012c64b2b48?w=1200"],
+        images: "/images/nokia-150.jpg",
         isActive: true,
       },
 
@@ -157,7 +157,7 @@ async function seed() {
         condition: "used",
         price: 120000,
         stock: 1,
-        images: ["https://images.unsplash.com/photo-1603302576837-37561b2e2302?w=1200"],
+        images: "/images/dell-latitutde-E6410.jpeg",
         isActive: true,
       },
       {
@@ -167,7 +167,7 @@ async function seed() {
         condition: "verified",
         price: 300000,
         stock: 5,
-        images: ["https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=1200"],
+        images:"/images/hp-840-g3.jpg",
         isActive: true,
       },
       {
@@ -177,7 +177,7 @@ async function seed() {
         condition: "verified",
         price: 165000,
         stock: 1,
-        images: ["https://images.unsplash.com/photo-1525547719571-a2d4ac8945e2?w=1200"],
+        images: "/images/hp-office-ng-used.webp",
         isActive: true,
       },
       {
@@ -187,7 +187,7 @@ async function seed() {
         condition: "verified",
         price: 245000,
         stock: 1,
-        images: ["https://images.unsplash.com/photo-1602080858428-57174d9431cf?w=1200"],
+        images: "/images/lenovo idea-pad.png",
         isActive: true,
       },
 
@@ -199,7 +199,7 @@ async function seed() {
         condition: "brand_new",
         price: 45000,
         stock: 14,
-        images: ["https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=1200"],
+        images: "/images/green-lion-headset.jpg",
         isActive: true,
       },
       {
@@ -219,7 +219,7 @@ async function seed() {
         condition: "brand_new",
         price: 370000,
         stock: 1,
-        images: ["https://images.unsplash.com/photo-1545454675-3531b543be5d?w=1200"],
+        images: ["https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=1200"],
         isActive: true,
       },
       {
@@ -229,7 +229,7 @@ async function seed() {
         condition: "brand_new",
         price: 570000,
         stock: 1,
-        images: ["https://images.unsplash.com/photo-1629730584814-c10f54593ccf?w=1200"],
+        images: "/images/Starlink-Router.webp",
         isActive: true,
       },
       {
@@ -239,7 +239,7 @@ async function seed() {
         condition: "brand_new",
         price: 590000,
         stock: 2,
-        images: ["https://images.unsplash.com/photo-1609592426039-2811a9f98a22?w=1200"],
+        images: "/images/power-bank-ldn.webp",
         isActive: true,
       }
     ]);
@@ -276,7 +276,7 @@ async function seed() {
         price: 95000,
         stock: 1,
         location: "Student Hostel",
-        images: ["https://images.unsplash.com/photo-1589254065878-42c9da997008?w=1200"],
+        images: "/images/children-bb8.png",
         isActive: true,
       },
       {
@@ -287,7 +287,7 @@ async function seed() {
         price: 30000,
         stock: 1,
         location: "Near Campus Gate",
-        images: ["https://images.unsplash.com/photo-1618945997453-2713f044675a?w=1200"],
+        images:"/images/sonik-fan.jpg",
         isActive: true,
       },
       {
@@ -298,7 +298,7 @@ async function seed() {
         price: 14000,
         stock: 10,
         location: "Campus Block A",
-        images: ["https://images.unsplash.com/photo-1495555961986-6d4c1ecb7be3?w=1200"],
+        images: "/images/sonik-iron.webp",
         isActive: true,
       }
     ]);
