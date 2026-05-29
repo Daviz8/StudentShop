@@ -10,7 +10,7 @@ export async function GET(request, context) {
     await connectDB();
 
     const params = await context.params;
-    const id = params?.id;
+    const id = params?.id;sd 
 
     if (!id) {
       return NextResponse.json(

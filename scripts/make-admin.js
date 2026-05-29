@@ -3,7 +3,7 @@ import dotenv from "dotenv";
 
 dotenv.config({ path: ".env.local" });
 
-const ADMIN_EMAIL = "studentshopng.info@gmail.com"
+
 
 const UserSchema = new mongoose.Schema(
   {

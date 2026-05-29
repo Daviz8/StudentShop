@@ -2,9 +2,8 @@
 
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-// Adjusted coordinates to wrap closely around the image container on lg screens
 const gadgets = [
   { label: "Laptop", emoji: "💻", top: "-10%", left: "-10%" },
   { label: "Phone", emoji: "📱", top: "-5%", right: "-10%" },
@@ -14,17 +13,62 @@ const gadgets = [
 
 export default function Home() {
   const router = useRouter();
+
+  const launchDate = new Date();
+  launchDate.setDate(launchDate.getDate() + 10);
+
+  const calculateTimeLeft = () => {
+    const difference = launchDate - new Date();
+
+    if (difference <= 0) {
+      return {
+        days: 0,
+        hours: 0,
+        minutes: 0,
+        seconds: 0,
+      };
+    }
+
+    return {
+      days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+      hours: Math.floor(
+        (difference / (1000 * 60 * 60)) % 24
+      ),
+      minutes: Math.floor(
+        (difference / 1000 / 60) % 60
+      ),
+      seconds: Math.floor(
+        (difference / 1000) % 60
+      ),
+    };
+  };
+
+  const [timeLeft, setTimeLeft] = useState(
+    calculateTimeLeft()
+  );
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeLeft(calculateTimeLeft());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
   const randomRoute = () => {
     const routes = ["/store", "/properties"];
-    const randomIndex = Math.floor(Math.random() * routes.length);
+
+    const randomIndex = Math.floor(
+      Math.random() * routes.length
+    );
+
     router.push(routes[randomIndex]);
   };
 
   return (
     <main className="min-h-screen overflow-hidden bg-gradient-to-br from-[#FFA500] via-[#FFC107] to-[#f59e0b] text-black">
       <section className="relative mx-auto flex min-h-screen max-w-7xl flex-col items-center justify-center px-5 py-10 lg:grid lg:grid-cols-2 lg:gap-10">
-
-        {/* Ambient background light */}
+        
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 0.35, y: 0 }}
@@ -32,26 +76,41 @@ export default function Home() {
           className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.7),transparent_45%)]"
         />
 
-        {/* Text and CTAs */}
+        {/* LEFT CONTENT */}
         <div className="relative z-20 order-2 mt-8 text-center lg:order-1 lg:mt-0 lg:text-left">
-          <motion.p
-            initial={{ opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-3 inline-flex rounded-full bg-black px-4 py-2 text-sm font-bold text-[#FFC107]"
-          >
-            Student Shop Nigeria
-          </motion.p>
+          
+          {/* TOP BADGES */}
+          <div className="mb-4 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
+            <motion.p
+              initial={{ opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="inline-flex rounded-full bg-black px-4 py-2 text-sm font-bold text-[#FFC107]"
+            >
+              Student Shop Nigeria
+            </motion.p>
 
+            <motion.div
+              initial={{ opacity: 0, scale: 0.7 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.3 }}
+              className="rounded-full border border-black bg-white/80 px-4 py-2 text-xs font-black uppercase tracking-widest backdrop-blur"
+            >
+              Beta Version
+            </motion.div>
+          </div>
+
+          {/* TITLE */}
           <motion.h1
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 }}
-            className="text-5xl font-black leading-tight tracking-tight md:text-3xl font-Mont"
+            className="text-5xl font-black leading-tight tracking-tight md:text-6xl font-Mont"
           >
             Buy, Sell, Swap <br />
             Easily.
           </motion.h1>
 
+          {/* TEXT STACK */}
           <motion.div
             initial="hidden"
             animate="show"
@@ -79,39 +138,94 @@ export default function Home() {
             ))}
           </motion.div>
 
+          {/* DESCRIPTION */}
           <motion.p
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.8 }}
             className="mx-auto mt-5 max-w-xl text-base font-medium text-black/80 lg:mx-0 font-Mont"
           >
-            A fast student-focused marketplace for gadgets, swaps, verified sales,
-            inspections, payments, and delivery.
+            A fast student-focused marketplace for gadgets,
+            properties, swaps, verified sales, inspections,
+            secure payments, and delivery.
           </motion.p>
 
+          {/* BETA NOTICE */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1 }}
+            className="mt-6 rounded-3xl border border-black/10 bg-white/40 p-5 backdrop-blur"
+          >
+            <p className="text-sm font-bold text-black/80">
+              🚀 Currently in public beta testing.
+            </p>
+
+            <p className="mt-2 text-sm text-black/70">
+              We are preparing for full launch. Some features
+              may still be improving as we test the platform.
+            </p>
+
+            {/* COUNTDOWN */}
+            <div className="mt-5 grid grid-cols-4 gap-3">
+              {[
+                {
+                  label: "Days",
+                  value: timeLeft.days,
+                },
+                {
+                  label: "Hours",
+                  value: timeLeft.hours,
+                },
+                {
+                  label: "Minutes",
+                  value: timeLeft.minutes,
+                },
+                {
+                  label: "Seconds",
+                  value: timeLeft.seconds,
+                },
+              ].map((item) => (
+                <div
+                  key={item.label}
+                  className="rounded-2xl bg-black p-3 text-center text-white"
+                >
+                  <div className="text-2xl font-black">
+                    {String(item.value).padStart(2, "0")}
+                  </div>
+
+                  <div className="text-xs uppercase tracking-widest text-white/60">
+                    {item.label}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+
+          {/* BUTTONS */}
           <motion.div
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1 }}
+            transition={{ delay: 1.2 }}
             className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center lg:justify-start"
           >
             <button
               onClick={() => router.push("/signup")}
               className="rounded-2xl bg-black px-8 py-4 text-base font-black text-white shadow-xl transition hover:scale-105 cursor-pointer"
             >
-              Get Started
+              Join Beta
             </button>
 
             <button
               onClick={randomRoute}
               className="rounded-2xl border-2 border-black bg-white/80 px-8 py-4 text-base font-black text-black shadow-xl backdrop-blur transition hover:scale-105 cursor-pointer"
             >
-              Explore Gadgets & Properties
+              Explore Marketplace
             </button>
           </motion.div>
         </div>
 
-        {/* Hero Image Section & Floating Gadgets */}
+        {/* RIGHT IMAGE */}
         <motion.div
           initial={{ opacity: 0, scale: 0.85, rotate: -4 }}
           animate={{
@@ -133,12 +247,10 @@ export default function Home() {
           }}
           className="relative z-20 order-1 flex justify-center lg:order-2 w-full max-w-md mx-auto"
         >
-          {/* Floating Gadgets mapped directly around this container element */}
           {gadgets.map((item, index) => (
             <motion.div
               key={item.label}
-              // lg:absolute changes relative behavior to wrap closely around the image container on desktop
-              className="absolute lg:absolute z-10 flex h-20 w-20 md:h-24 md:w-24 lg:h-28 lg:w-28 items-center justify-center rounded-2xl text-2xl md:text-3xl shadow-xl backdrop-blur bg-white/10"
+              className="absolute z-10 flex h-20 w-20 md:h-24 md:w-24 lg:h-28 lg:w-28 items-center justify-center rounded-2xl text-2xl md:text-3xl shadow-xl backdrop-blur bg-white/10"
               style={{
                 top: item.top,
                 left: item.left,
@@ -164,14 +276,6 @@ export default function Home() {
             alt="Student Shop Nigeria"
             className="max-h-[300px] w-full max-w-md object-contain drop-shadow-2xl rounded-md hidden md:block"
           />
-
-          <motion.div
-            animate={{ scale: [1, 1.06, 1] }}
-            transition={{ duration: 2, repeat: Infinity }}
-            className="absolute bottom-6 rounded-2xl bg-black px-5 py-3 text-center text-sm font-black text-[#FFC107] shadow-2xl"
-          >
-            {/* Kept intact if you want to add badge text later */}
-          </motion.div>
         </motion.div>
       </section>
     </main>

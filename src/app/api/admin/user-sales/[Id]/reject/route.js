@@ -27,7 +27,7 @@ export async function PATCH(request, { params }) {
 
     return NextResponse.json({
       success: true,
-      message: "Item rejected, images deleted from Cloudinary, and record deleted",
+      message: "Item rejected, images has been deleted, and record deleted",
     });
   } catch (error) {
     return NextResponse.json(

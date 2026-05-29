@@ -1,14 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  Loader2,
-  PackagePlus,
-  Trash2,
-  RefreshCw,
-  Eye,
-  EyeOff,
-} from "lucide-react";
+import { Loader2,PackagePlus, Trash2,RefreshCw, Eye,EyeOff,} from "lucide-react";
 
 const initialForm = {
   name: "",
