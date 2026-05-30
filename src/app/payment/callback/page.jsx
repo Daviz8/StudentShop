@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { CheckCircle2, XCircle } from "lucide-react";
-import { verifyPaystackTransaction } from "@/lib/paystack";
+import { verifyPaystackTransaction } from "../../lib/Paystack";
 import { connectDB } from "../../lib/db";
 import Order from "../../lib/models/Order";
 
