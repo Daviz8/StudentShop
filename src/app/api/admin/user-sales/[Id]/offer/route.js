@@ -4,57 +4,48 @@ import { connectDB } from "@/src/app/lib/db";
 import UserSale from "@/src/app/lib/models/UserSale";
 import { getCurrentUser } from "@/src/app/lib/getCurrentUser";
 
+const MAIN_ADMIN_EMAIL = process.env.MAIN_ADMIN_EMAIL;
 
 function isAdmin(user) {
   return (
     user?.role === "admin" ||
-    String(user?.email || "").trim().toLowerCase() === MAIN_ADMIN_EMAIL
+    String(user?.email || "").trim().toLowerCase() ===
+      String(MAIN_ADMIN_EMAIL || "").toLowerCase()
   );
 }
 
-export async function PATCH(request, context) {
+export async function PATCH(request, { params }) {
   try {
     const user = await getCurrentUser();
 
     if (!user || !isAdmin(user)) {
       return NextResponse.json(
-        {
-          success: false,
-          message: "Admin access only.",
-        },
+        { success: false, message: "Admin access only." },
         { status: 403 }
       );
     }
 
     await connectDB();
 
-    const params = await context.params;
     const id = params?.id;
 
+    // ✅ safer validation
     if (!id || !mongoose.Types.ObjectId.isValid(id)) {
       return NextResponse.json(
-        {
-          success: false,
-          message: "Invalid sale request ID.",
-        },
+        { success: false, message: "Invalid sale request ID." },
         { status: 400 }
       );
     }
 
     const body = await request.json();
 
-    const adminOfferPrice = Number(
-      body.adminOfferPrice || body.offerPrice || 0
-    );
+    const adminOfferPrice = Number(body.adminOfferPrice ?? body.offerPrice);
 
     const message = String(body.message || "").trim();
 
-    if (!adminOfferPrice || adminOfferPrice <= 0) {
+    if (!Number.isFinite(adminOfferPrice) || adminOfferPrice <= 0) {
       return NextResponse.json(
-        {
-          success: false,
-          message: "Valid offer price is required.",
-        },
+        { success: false, message: "Valid offer price is required." },
         { status: 400 }
       );
     }
@@ -63,16 +54,14 @@ export async function PATCH(request, context) {
 
     if (!saleRequest) {
       return NextResponse.json(
-        {
-          success: false,
-          message: "Sale request not found.",
-        },
+        { success: false, message: "Sale request not found." },
         { status: 404 }
       );
     }
 
     const negotiationCount = Number(saleRequest.negotiationCount || 0);
 
+    // 🚨 hard stop after 3 tries
     if (negotiationCount >= 3) {
       saleRequest.status = "rejected";
       await saleRequest.save();
@@ -80,27 +69,31 @@ export async function PATCH(request, context) {
       return NextResponse.json(
         {
           success: false,
-          message: "Negotiation limit reached. This request is rejected.",
+          message: "Negotiation limit reached. Request rejected.",
         },
         { status: 400 }
       );
     }
 
-    // Close any previous pending offer before adding a new one
-    saleRequest.negotiations = (saleRequest.negotiations || []).map((item) => {
-      if (item.sellerResponse === "pending") {
-        item.sellerResponse = "rejected";
-        item.respondedAt = new Date();
+    // close previous pending negotiations safely
+    saleRequest.negotiations = (saleRequest.negotiations || []).map((n) => {
+      if (n.sellerResponse === "pending") {
+        return {
+          ...n.toObject?.(),
+          sellerResponse: "rejected",
+          respondedAt: new Date(),
+        };
       }
-
-      return item;
+      return n;
     });
 
-    saleRequest.negotiationCount = negotiationCount + 1;
+    const nextTrial = negotiationCount + 1;
+
+    saleRequest.negotiationCount = nextTrial;
     saleRequest.status = "negotiating";
 
     saleRequest.negotiations.push({
-      trialNumber: saleRequest.negotiationCount,
+      trialNumber: nextTrial,
       adminOfferPrice,
       message,
       sellerResponse: "pending",

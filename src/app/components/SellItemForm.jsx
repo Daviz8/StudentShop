@@ -1,5 +1,3 @@
-
-
 "use client";
 
 import { useState } from "react";
@@ -170,17 +168,22 @@ export default function SellItemForm() {
         return;
       }
 
-      alert(
-        "Your item has been submitted successfully. You can now track admin offers."
-      );
+      // Capture values for the success page before clearing state
+      const submittedItemName = form.gadgetName;
+      const generatedId = data.saleRequest._id;
 
+      // Revoke preview URLs to prevent memory leaks
       previews.forEach((url) => URL.revokeObjectURL(url));
 
+      // Reset application states
       setForm(initialState);
       setImages([]);
       setPreviews([]);
 
-      router.push(`/sell-requests/${data.saleRequest._id}`);
+      // Redirect cleanly to the newly designed success page with context parameters
+      router.push(
+        `/sell-requests/success?id=${generatedId}&item=${encodeURIComponent(submittedItemName)}`
+      );
       router.refresh();
     } catch (error) {
       console.error("SELL_ITEM_FORM_ERROR:", error);

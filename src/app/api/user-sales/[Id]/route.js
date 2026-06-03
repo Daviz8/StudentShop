@@ -5,13 +5,18 @@ import UserSale from "@/src/app/lib/models/UserSale";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(request, context) {
+export async function GET(request, { params }) {
   try {
     await connectDB();
 
-    const params = await context.params;
     const id = params?.id;
 
+    // 🔍 debug logs (safe for production debugging, remove later if needed)
+    console.log("ID RECEIVED:", id);
+    console.log("LENGTH:", id?.length);
+    console.log("VALID OBJECTID:", mongoose.Types.ObjectId.isValid(id));
+
+    // 🚨 validate ID early
     if (!id || !mongoose.Types.ObjectId.isValid(id)) {
       return NextResponse.json(
         {
@@ -22,7 +27,8 @@ export async function GET(request, context) {
       );
     }
 
-    const saleRequest = await UserSale.findById(id).lean();
+    // fetch record
+    const saleRequest = await UserSale.findById(id);
 
     if (!saleRequest) {
       return NextResponse.json(
@@ -36,7 +42,7 @@ export async function GET(request, context) {
 
     return NextResponse.json({
       success: true,
-      saleRequest: JSON.parse(JSON.stringify(saleRequest)),
+      saleRequest: saleRequest.toObject(),
     });
   } catch (error) {
     console.error("GET_USER_SALE_DETAIL_ERROR:", error);

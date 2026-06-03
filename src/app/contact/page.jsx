@@ -15,7 +15,7 @@ Contact Us
 <p className="mt-4 text-black/60">
 
 Email:
-hello@studentshop.com
+studentshopng.info@gmail.com
 
 </p>
 
