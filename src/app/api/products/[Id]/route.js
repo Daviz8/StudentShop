@@ -5,11 +5,11 @@ import Product from "@/src/app/lib/models/Product";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(request, context) {
+export async function GET(request) {
   try {
     await connectDB();
 
-    const params = await context.params;
+    const params = await request.params;
     const id = params?.id;sd 
 
     if (!id) {

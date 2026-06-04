@@ -257,5 +257,4 @@ const UserSaleSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-export default mongoose.models.UserSale ||
-  mongoose.model("UserSale", UserSaleSchema);
+export default mongoose.models.UserSale || mongoose.model("UserSale", UserSaleSchema);
