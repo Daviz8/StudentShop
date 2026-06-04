@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { UploadCloud, CheckCircle2 } from "lucide-react";
 
+export const dynamic = "force-dynamic";
 const initialState = {
   sellerName: "",
   sellerPhone: "",

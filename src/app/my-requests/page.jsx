@@ -12,6 +12,8 @@ import {
   Tag,
 } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+
 export default function MyRequestsPage() {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);

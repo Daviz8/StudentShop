@@ -51,7 +51,7 @@ export async function PATCH(request, context) {
     await connectDB();
 
     const params = await context.params;
-    const id = params?.id;
+    const id = params?._id;
 
     if (!id || !mongoose.Types.ObjectId.isValid(id)) {
       return NextResponse.json(
