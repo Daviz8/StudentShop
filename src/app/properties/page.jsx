@@ -4,9 +4,8 @@ import { getCurrentUser } from "../lib/getCurrentUser";
 
 async function getProperties() {
   const baseUrl =
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    "http://localhost:3000";
-
+    process.env.NEXT_PUBLIC_SITE_URL
+    
   const res = await fetch(
     `${baseUrl}/api/properties`,
     {
