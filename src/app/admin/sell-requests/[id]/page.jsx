@@ -24,7 +24,7 @@ export default function AdminSellRequestDetailPage() {
   const params = useParams();
   const router = useRouter();
 
-  const id = params?.id;
+  const id = params?.id || params?._id;
 
   const [item, setItem] = useState(null);
   const [loading, setLoading] = useState(true);
