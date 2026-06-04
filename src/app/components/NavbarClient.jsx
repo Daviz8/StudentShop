@@ -435,7 +435,7 @@ export default function NavbarClient({ user }) {
     <nav className="sticky top-0 z-50 border-b border-black/10 bg-white/95 backdrop-blur-xl">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
         <Link href="/" className="text-2xl font-black tracking-tight text-black">
-          Student<span className="text-[#FFA500]">Shop</span>
+          Student<span className="text-[#FFA500]">Shop</span> <span className="text-green-700">Nigeria</span>
         </Link>
 
         <div className="hidden items-center gap-8 md:flex">

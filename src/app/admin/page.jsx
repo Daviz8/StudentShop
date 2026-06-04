@@ -1,3 +1,5 @@
+
+
 import AdminSellRequestCard from "../components/AdminSellRequestCard";
 
 async function getSellRequests() {
@@ -25,6 +27,7 @@ async function getSellRequests() {
     return [];
   }
 }
+export const dynamic = "force-dynamic";
 
 export default async function AdminPage() {
   const requests = await getSellRequests();

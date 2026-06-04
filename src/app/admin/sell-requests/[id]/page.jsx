@@ -18,6 +18,8 @@ import {
   XCircle,
 } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+
 export default function AdminSellRequestDetailPage() {
   const params = useParams();
   const router = useRouter();
