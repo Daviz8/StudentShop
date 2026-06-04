@@ -183,7 +183,7 @@ export default function NavbarClient({ user }) {
             href="/admin"
             className="text-2xl font-black tracking-tight text-black"
           >
-            Student<span className="text-[#FFA500]">Shop</span><span className="text-green-700">Nigeria</span>
+            Student<span className="text-[#FFA500]">Shop</span> <span className="text-green-700">Nigeria</span>
           </Link>
 
           <div className="hidden items-center gap-5 md:flex">

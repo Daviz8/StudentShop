@@ -123,7 +123,7 @@ export async function POST(request) {
       createdOrder = orders[0];
     });
 
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
 
     const paystackTransaction = await initializePaystackTransaction({
       email: createdOrder.customerEmail,
