@@ -1,4 +1,8 @@
 
+
+
+
+
 "use client";
 
 import Link from "next/link";
@@ -19,8 +23,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
-
-export const dynamic = "force-dynamic";
+const MAIN_ADMIN_EMAIL = "okorowhyme234@gmail.com";
 
 export default function NavbarClient({ user }) {
   const [open, setOpen] = useState(false);
