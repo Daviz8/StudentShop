@@ -23,7 +23,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
-const MAIN_ADMIN_EMAIL = "okorowhyme234@gmail.com";
+const MAIN_ADMIN_EMAIL = "studentshopng.info@gmail.com";
 
 export default function NavbarClient({ user }) {
   const [open, setOpen] = useState(false);
