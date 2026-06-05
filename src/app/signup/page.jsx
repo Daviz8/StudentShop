@@ -100,12 +100,7 @@ export default function SignUpPage() {
               />
             </div>
 
-            <p className="mt-6 text-center text-sm text-black/50">
-              Already have an account?{" "}
-              <Link href="/signup" className="font-black text-black">
-                Sign in
-              </Link>
-            </p>
+          
           </section>
         </div>
       </main>

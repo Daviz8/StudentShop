@@ -21,7 +21,6 @@ studentshopng.info@gmail.com
 
 <p className="mt-2 text-black/60">
 
-Phone:
 
 </p>
 
