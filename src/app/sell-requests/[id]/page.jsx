@@ -1,3 +1,9 @@
+
+
+
+
+
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -13,12 +19,13 @@ import {
   XCircle,
 } from "lucide-react";
 
-export const dynamic = "force-dynamic";
 export default function UserSellRequestPage() {
   const params = useParams();
   const router = useRouter();
 
-  const id = params?._id;
+  // IMPORTANT FIX:
+  // If your folder is /sell-requests/[id]/page.jsx, the param is params.id, not params._id
+  const id = params?.id;
 
   const [item, setItem] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -30,7 +37,11 @@ export default function UserSellRequestPage() {
   const [counterMessage, setCounterMessage] = useState("");
 
   const loadItem = async () => {
-    if (!id) return;
+    if (!id) {
+      setError("Sale request ID is missing from the page URL.");
+      setLoading(false);
+      return;
+    }
 
     try {
       setLoading(true);
@@ -42,14 +53,12 @@ export default function UserSellRequestPage() {
 
       const data = await res.json();
 
+      console.log("USER_SALE_REQUEST_RESPONSE:", data);
+
       if (!res.ok || !data?.success || !data?.saleRequest) {
         throw new Error(data?.message || "Failed to load request");
       }
 
-      /*
-        If this request is already rejected,
-        do not keep showing it to the user.
-      */
       if (data.saleRequest.status === "rejected") {
         router.push("/my-requests");
         router.refresh();
@@ -58,6 +67,7 @@ export default function UserSellRequestPage() {
 
       setItem(data.saleRequest);
     } catch (err) {
+      console.error("LOAD_USER_SALE_REQUEST_ERROR:", err);
       setError(err.message || "Something went wrong while loading request");
     } finally {
       setLoading(false);
@@ -113,10 +123,6 @@ export default function UserSellRequestPage() {
       setCounterPrice("");
       setCounterMessage("");
 
-      /*
-        If user rejected final offer:
-        leave the detail page and remove it from user-side view.
-      */
       if (data.finalRejected || data.saleRequest?.status === "rejected") {
         router.push("/my-requests");
         router.refresh();
