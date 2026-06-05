@@ -1,8 +1,4 @@
 
-
-
-
-
 "use client";
 
 import Link from "next/link";
@@ -23,7 +19,8 @@ import {
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
-const MAIN_ADMIN_EMAIL = "okorowhyme234@gmail.com";
+
+export const dynamic = "force-dynamic";
 
 export default function NavbarClient({ user }) {
   const [open, setOpen] = useState(false);
@@ -183,7 +180,7 @@ export default function NavbarClient({ user }) {
             href="/admin"
             className="text-2xl font-black tracking-tight text-black"
           >
-            Student<span className="text-[#FFA500]">Shop</span>
+            Student<span className="text-[#FFA500]">Shop</span> <span className="text-green-700">Nigeria</span>
           </Link>
 
           <div className="hidden items-center gap-5 md:flex">
@@ -435,7 +432,7 @@ export default function NavbarClient({ user }) {
     <nav className="sticky top-0 z-50 border-b border-black/10 bg-white/95 backdrop-blur-xl">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
         <Link href="/" className="text-2xl font-black tracking-tight text-black">
-          Student<span className="text-[#FFA500]">Shop</span>
+          Student<span className="text-[#FFA500]">Shop</span> <span className="text-green-700">Nigeria</span>
         </Link>
 
         <div className="hidden items-center gap-8 md:flex">
