@@ -138,7 +138,8 @@ export default function CheckoutPage() {
                 <input
                   value={customer.phone}
                   onChange={(e) => updateCustomer("phone", e.target.value)}
-                  type="tel"
+                    type="tel"
+                  maxLength={11}
                   placeholder="Phone number"
                   className="rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3.5 text-sm outline-none transition focus:border-slate-950 focus:bg-white focus:ring-1 focus:ring-slate-950 md:col-span-2"
                 />

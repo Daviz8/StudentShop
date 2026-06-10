@@ -1,10 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { UploadCloud, CheckCircle2, Loader2 } from "lucide-react";
-
-export const dynamic = "force-dynamic";
 
 const initialState = {
   sellerName: "",
@@ -36,6 +34,61 @@ const initialState = {
   agreedToTerms: false,
 };
 
+async function compressImage(file, maxWidth = 1200, quality = 0.72) {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    const objectUrl = URL.createObjectURL(file);
+
+    image.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+
+      const canvas = document.createElement("canvas");
+      const scale = Math.min(1, maxWidth / image.width);
+
+      canvas.width = Math.round(image.width * scale);
+      canvas.height = Math.round(image.height * scale);
+
+      const ctx = canvas.getContext("2d");
+
+      if (!ctx) {
+        reject(new Error("Could not compress image"));
+        return;
+      }
+
+      ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            reject(new Error("Image compression failed"));
+            return;
+          }
+
+          const compressedFile = new File(
+            [blob],
+            file.name.replace(/\.[^/.]+$/, ".jpg"),
+            {
+              type: "image/jpeg",
+              lastModified: Date.now(),
+            }
+          );
+
+          resolve(compressedFile);
+        },
+        "image/jpeg",
+        quality
+      );
+    };
+
+    image.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error("Invalid image file"));
+    };
+
+    image.src = objectUrl;
+  });
+}
+
 export default function SellItemForm() {
   const router = useRouter();
 
@@ -43,6 +96,13 @@ export default function SellItemForm() {
   const [images, setImages] = useState([]);
   const [previews, setPreviews] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [loadingText, setLoadingText] = useState("");
+
+  useEffect(() => {
+    return () => {
+      previews.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [previews]);
 
   const updateField = (key, value) => {
     setForm((prev) => ({
@@ -51,7 +111,16 @@ export default function SellItemForm() {
     }));
   };
 
-  const handleImageChange = (event) => {
+  const updateTextField = (key, value) => {
+    updateField(key, value);
+  };
+
+  const updateNumberField = (key, value) => {
+    const onlyNumbers = String(value || "").replace(/[^\d]/g, "");
+    updateField(key, onlyNumbers);
+  };
+
+  const handleImageChange = async (event) => {
     const selectedFiles = Array.from(event.target.files || []);
 
     if (selectedFiles.length > 5) {
@@ -60,30 +129,72 @@ export default function SellItemForm() {
       return;
     }
 
-    const validFiles = [];
-
-    for (const file of selectedFiles) {
-      if (!file.type.startsWith("image/")) {
-        alert("Only image files are allowed");
-        event.target.value = "";
-        return;
-      }
-
-      if (file.size > 5 * 1024 * 1024) {
-        alert("Each image must not be larger than 5MB");
-        event.target.value = "";
-        return;
-      }
-
-      validFiles.push(file);
+    if (selectedFiles.length === 0) {
+      return;
     }
 
-    previews.forEach((url) => URL.revokeObjectURL(url));
+    const validFiles = [];
 
-    setImages(validFiles);
+    try {
+      setLoading(true);
+      setLoadingText("Preparing your images...");
 
-    const previewUrls = validFiles.map((file) => URL.createObjectURL(file));
-    setPreviews(previewUrls);
+      for (const file of selectedFiles) {
+        const isImage =
+          file.type.startsWith("image/") ||
+          /\.(jpg|jpeg|png|webp|heic|heif)$/i.test(file.name);
+
+        if (!isImage) {
+          alert("Only image files are allowed");
+          event.target.value = "";
+          return;
+        }
+
+        let finalFile = file;
+
+        try {
+          finalFile = await compressImage(file);
+        } catch (error) {
+          console.error("IMAGE_COMPRESSION_SINGLE_ERROR:", error);
+
+          if (file.size > 5 * 1024 * 1024) {
+            alert(
+              "One image is too large and could not be compressed. Please choose a smaller image."
+            );
+            event.target.value = "";
+            return;
+          }
+
+          finalFile = file;
+        }
+
+        if (finalFile.size > 2 * 1024 * 1024) {
+          finalFile = await compressImage(finalFile, 900, 0.6);
+        }
+
+        if (finalFile.size > 3 * 1024 * 1024) {
+          alert("One image is still too large. Please choose a smaller image.");
+          event.target.value = "";
+          return;
+        }
+
+        validFiles.push(finalFile);
+      }
+
+      previews.forEach((url) => URL.revokeObjectURL(url));
+
+      setImages(validFiles);
+
+      const previewUrls = validFiles.map((file) => URL.createObjectURL(file));
+      setPreviews(previewUrls);
+    } catch (error) {
+      console.error("IMAGE_COMPRESS_ERROR:", error);
+      alert("Could not process one of the images. Please try another image.");
+      event.target.value = "";
+    } finally {
+      setLoading(false);
+      setLoadingText("");
+    }
   };
 
   const submitForm = async (event) => {
@@ -137,6 +248,7 @@ export default function SellItemForm() {
     }
 
     setLoading(true);
+    setLoadingText("Sending your request...");
 
     try {
       const formData = new FormData();
@@ -145,12 +257,6 @@ export default function SellItemForm() {
         formData.append(key, String(value));
       });
 
-      /*
-        IMPORTANT FIX:
-        Your backend is still expecting "gadgetDescription".
-        Your form uses "faultsAccessoriesReason".
-        This sends the same description under both names.
-      */
       formData.append("gadgetDescription", form.faultsAccessoriesReason);
 
       images.forEach((image) => {
@@ -170,28 +276,32 @@ export default function SellItemForm() {
         return;
       }
 
-      // Capture values for the success page before clearing state
       const submittedItemName = form.gadgetName;
-      const generatedId = data.saleRequest._id;
+      const generatedId = data.saleRequest?._id;
 
-      // Revoke preview URLs to prevent memory leaks
       previews.forEach((url) => URL.revokeObjectURL(url));
 
-      // Reset application states
       setForm(initialState);
       setImages([]);
       setPreviews([]);
 
-      // Redirect cleanly to the newly designed success page with context parameters
-     router.push(
-  `/sell-requests/success/${generatedId}?item=${encodeURIComponent(submittedItemName)}`
-);
+      if (generatedId) {
+        router.push(
+          `/sell-requests/success/${generatedId}?item=${encodeURIComponent(
+            submittedItemName
+          )}`
+        );
+      } else {
+        router.push("/my-requests");
+      }
+
       router.refresh();
     } catch (error) {
       console.error("SELL_ITEM_FORM_ERROR:", error);
       alert("Something went wrong while submitting your item.");
     } finally {
       setLoading(false);
+      setLoadingText("");
     }
   };
 
@@ -227,31 +337,37 @@ export default function SellItemForm() {
 
         <div className="grid gap-4 md:grid-cols-2">
           <input
+            type="text"
             value={form.sellerName}
-            onChange={(e) => updateField("sellerName", e.target.value)}
+            onChange={(e) => updateTextField("sellerName", e.target.value)}
             placeholder="Full name *"
             className="rounded-2xl border border-black/10 px-4 py-3 outline-none focus:border-[#FFA500]"
             required
           />
 
           <input
+            type="tel"
+            inputMode="numeric"
+            pattern="[0-9]*"
             value={form.sellerPhone}
-            onChange={(e) => updateField("sellerPhone", e.target.value)}
+            onChange={(e) => updateNumberField("sellerPhone", e.target.value)}
             placeholder="Phone / WhatsApp *"
             className="rounded-2xl border border-black/10 px-4 py-3 outline-none focus:border-[#FFA500]"
             required
           />
 
           <input
+            type="email"
             value={form.sellerEmail}
-            onChange={(e) => updateField("sellerEmail", e.target.value)}
+            onChange={(e) => updateTextField("sellerEmail", e.target.value)}
             placeholder="Email address optional"
             className="rounded-2xl border border-black/10 px-4 py-3 outline-none focus:border-[#FFA500]"
           />
 
           <input
+            type="text"
             value={form.cityArea}
-            onChange={(e) => updateField("cityArea", e.target.value)}
+            onChange={(e) => updateTextField("cityArea", e.target.value)}
             placeholder="City / Area *"
             className="rounded-2xl border border-black/10 px-4 py-3 outline-none focus:border-[#FFA500]"
             required
@@ -259,21 +375,19 @@ export default function SellItemForm() {
 
           <select
             value={form.idType}
-            onChange={(e) => updateField("idType", e.target.value)}
+            onChange={(e) => updateTextField("idType", e.target.value)}
             className="rounded-2xl border border-black/10 px-4 py-3 outline-none focus:border-[#FFA500]"
             required
           >
             <option value="">Select ID type *</option>
             <option value="nin">NIN</option>
-            <option value="drivers_licence">Driver&apos;s Licence</option>
-            <option value="student_id">Student ID</option>
-            <option value="voters_card">Voter&apos;s Card</option>
-            <option value="other">Other</option>
           </select>
 
           <input
+            type="tel" 
+              maxLength={11}
             value={form.ninNumber}
-            onChange={(e) => updateField("ninNumber", e.target.value)}
+            onChange={(e) => updateNumberField("ninNumber", e.target.value)}
             placeholder="NIN number"
             className="rounded-2xl border border-black/10 px-4 py-3 outline-none focus:border-[#FFA500]"
           />
@@ -293,37 +407,41 @@ export default function SellItemForm() {
 
         <div className="grid gap-4 md:grid-cols-2">
           <input
+            type="text"
             value={form.gadgetName}
-            onChange={(e) => updateField("gadgetName", e.target.value)}
+            onChange={(e) => updateTextField("gadgetName", e.target.value)}
             placeholder="Item name *"
             className="rounded-2xl border border-black/10 px-4 py-3 outline-none focus:border-[#FFA500]"
             required
           />
 
           <input
+            type="text"
             value={form.brandModel}
-            onChange={(e) => updateField("brandModel", e.target.value)}
+            onChange={(e) => updateTextField("brandModel", e.target.value)}
             placeholder="Brand & model"
             className="rounded-2xl border border-black/10 px-4 py-3 outline-none focus:border-[#FFA500]"
           />
 
           <input
+            type="text"
             value={form.colorVariant}
-            onChange={(e) => updateField("colorVariant", e.target.value)}
+            onChange={(e) => updateTextField("colorVariant", e.target.value)}
             placeholder="Colour / size / variant"
             className="rounded-2xl border border-black/10 px-4 py-3 outline-none focus:border-[#FFA500]"
           />
 
           <input
+            type="text"
             value={form.serialOrImei}
-            onChange={(e) => updateField("serialOrImei", e.target.value)}
+            onChange={(e) => updateTextField("serialOrImei", e.target.value)}
             placeholder="Serial no. / IMEI if applicable"
             className="rounded-2xl border border-black/10 px-4 py-3 outline-none focus:border-[#FFA500]"
           />
 
           <select
             value={form.category}
-            onChange={(e) => updateField("category", e.target.value)}
+            onChange={(e) => updateTextField("category", e.target.value)}
             className="rounded-2xl border border-black/10 px-4 py-3 outline-none focus:border-[#FFA500]"
             required
           >
@@ -335,15 +453,16 @@ export default function SellItemForm() {
           </select>
 
           <input
+            type="text"
             value={form.otherCategory}
-            onChange={(e) => updateField("otherCategory", e.target.value)}
+            onChange={(e) => updateTextField("otherCategory", e.target.value)}
             placeholder="Other category if applicable"
             className="rounded-2xl border border-black/10 px-4 py-3 outline-none focus:border-[#FFA500]"
           />
 
           <select
             value={form.condition}
-            onChange={(e) => updateField("condition", e.target.value)}
+            onChange={(e) => updateTextField("condition", e.target.value)}
             className="rounded-2xl border border-black/10 px-4 py-3 outline-none focus:border-[#FFA500]"
             required
           >
@@ -353,9 +472,13 @@ export default function SellItemForm() {
           </select>
 
           <input
-            type="number"
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
             value={form.sellerAskingPrice}
-            onChange={(e) => updateField("sellerAskingPrice", e.target.value)}
+            onChange={(e) =>
+              updateNumberField("sellerAskingPrice", e.target.value)
+            }
             placeholder="Customer's asking price ₦ *"
             className="rounded-2xl border border-black/10 px-4 py-3 outline-none focus:border-[#FFA500]"
             required
@@ -365,7 +488,7 @@ export default function SellItemForm() {
         <textarea
           value={form.faultsAccessoriesReason}
           onChange={(e) =>
-            updateField("faultsAccessoriesReason", e.target.value)
+            updateTextField("faultsAccessoriesReason", e.target.value)
           }
           placeholder="Faults / accessories included / reason for selling *"
           className="mt-4 min-h-32 w-full rounded-2xl border border-black/10 px-4 py-3 outline-none focus:border-[#FFA500]"
@@ -374,7 +497,7 @@ export default function SellItemForm() {
 
         <textarea
           value={form.additionalNotes}
-          onChange={(e) => updateField("additionalNotes", e.target.value)}
+          onChange={(e) => updateTextField("additionalNotes", e.target.value)}
           placeholder="Additional notes"
           className="mt-4 min-h-24 w-full rounded-2xl border border-black/10 px-4 py-3 outline-none focus:border-[#FFA500]"
         />
@@ -387,12 +510,13 @@ export default function SellItemForm() {
             </span>
 
             <span className="mt-1 block text-sm text-black/50">
-              Maximum 5 images. JPG, PNG, or WEBP. Each image must be under 5MB.
+              Maximum 5 images. JPG, PNG, WEBP, HEIC or HEIF. Images will be
+              compressed before upload.
             </span>
 
             <input
               type="file"
-              accept="image/*"
+              accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
               multiple
               onChange={handleImageChange}
               className="mt-4 block w-full text-sm"
@@ -433,7 +557,9 @@ export default function SellItemForm() {
         <div className="grid gap-4 md:grid-cols-2">
           <select
             value={form.returnPreference}
-            onChange={(e) => updateField("returnPreference", e.target.value)}
+            onChange={(e) =>
+              updateTextField("returnPreference", e.target.value)
+            }
             className="rounded-2xl border border-black/10 px-4 py-3 outline-none focus:border-[#FFA500]"
             required
           >
@@ -442,16 +568,19 @@ export default function SellItemForm() {
           </select>
 
           <input
+            type="text"
             value={form.desiredItem}
-            onChange={(e) => updateField("desiredItem", e.target.value)}
+            onChange={(e) => updateTextField("desiredItem", e.target.value)}
             placeholder="Desired item if swapping or upgrading"
             className="rounded-2xl border border-black/10 px-4 py-3 outline-none focus:border-[#FFA500]"
           />
 
           <input
-            type="number"
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
             value={form.topUpAmount}
-            onChange={(e) => updateField("topUpAmount", e.target.value)}
+            onChange={(e) => updateNumberField("topUpAmount", e.target.value)}
             placeholder="Top-up amount willing to add ₦"
             className="rounded-2xl border border-black/10 px-4 py-3 outline-none focus:border-[#FFA500] md:col-span-2"
           />
@@ -472,7 +601,7 @@ export default function SellItemForm() {
         <div className="grid gap-4 md:grid-cols-3">
           <select
             value={form.heardFrom}
-            onChange={(e) => updateField("heardFrom", e.target.value)}
+            onChange={(e) => updateTextField("heardFrom", e.target.value)}
             className="rounded-2xl border border-black/10 px-4 py-3 outline-none focus:border-[#FFA500]"
             required
           >
@@ -487,15 +616,17 @@ export default function SellItemForm() {
           </select>
 
           <input
+            type="text"
             value={form.referralCode}
-            onChange={(e) => updateField("referralCode", e.target.value)}
+            onChange={(e) => updateTextField("referralCode", e.target.value)}
             placeholder="Referral code if any"
             className="rounded-2xl border border-black/10 px-4 py-3 outline-none focus:border-[#FFA500]"
           />
 
           <input
+            type="text"
             value={form.referredBy}
-            onChange={(e) => updateField("referredBy", e.target.value)}
+            onChange={(e) => updateTextField("referredBy", e.target.value)}
             placeholder="Referred by name / username"
             className="rounded-2xl border border-black/10 px-4 py-3 outline-none focus:border-[#FFA500]"
           />
@@ -550,32 +681,39 @@ export default function SellItemForm() {
       <button
         type="submit"
         disabled={loading}
-        className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#FFA500] px-5 py-4 font-black text-black hover:bg-[#FFC107] disabled:opacity-60"
+        className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#FFA500] px-5 py-4 font-black text-black hover:bg-[#FFC107] disabled:cursor-not-allowed disabled:opacity-60"
       >
-        <CheckCircle2 size={18} />
-        {loading ? "Submitting..." : "Submit Trade-In Request"}
+        {loading ? (
+          <>
+            <Loader2 size={18} className="animate-spin" />
+            Please wait...
+          </>
+        ) : (
+          <>
+            <CheckCircle2 size={18} />
+            Submit Trade-In Request
+          </>
+        )}
       </button>
+
       {loading && (
-  <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm">
-    <div className="rounded-3xl bg-white p-8 shadow-2xl">
-      <div className="flex flex-col items-center">
-        <Loader2
-          size={50}
-          className="animate-spin text-[#FFA500]"
-        />
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/80 px-6 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-3xl bg-white p-8 shadow-2xl">
+            <div className="flex flex-col items-center">
+              <Loader2 size={50} className="animate-spin text-[#FFA500]" />
 
-        <h3 className="mt-4 text-xl font-black text-black">
-          Sending your request
-        </h3>
+              <h3 className="mt-4 text-xl font-black text-black">
+                Processing request
+              </h3>
 
-        <p className="mt-2 text-center text-sm text-black/60">
-          Please wait while we upload your images and process your trade-in
-          request.
-        </p>
-      </div>
-    </div>
-  </div>
-)}
+              <p className="mt-2 text-center text-sm text-black/60">
+                {loadingText ||
+                  "Please wait while we prepare your images and submit your trade-in request."}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </form>
   );
 }
