@@ -47,4 +47,4 @@ export default function SellRequestSuccessPage() {
       </div>
     </div>
   );
-}
+} 

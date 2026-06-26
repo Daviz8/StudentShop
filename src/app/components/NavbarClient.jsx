@@ -6,8 +6,7 @@
 "use client";
 
 import Link from "next/link";
-import {
-  Bell,
+import { Bell,
   CalendarDays,
   Clock,
   LayoutDashboard,
@@ -178,7 +177,7 @@ export default function NavbarClient({ user }) {
   if (isAdmin) {
     return (
       <nav className="sticky top-0 z-50 border-b border-black/10 bg-white/95 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-10 py-4">
           <Link
             href="/admin"
             className="text-2xl font-black tracking-tight text-black"
@@ -196,10 +195,18 @@ export default function NavbarClient({ user }) {
 
             <Link
               href="/admin/products"
-              className="flex items-center gap-2 rounded-full bg-[#FFA500] px-4 py-2 font-black text-black transition hover:bg-[#FFC107]"
+              className="flex items-center gap-1 rounded-full bg-[#FFA500] px-4 py-2 font-black text-black transition hover:bg-[#FFC107]"
             >
               <PackagePlus size={17} />
               Product Upload
+            </Link>
+
+              <Link
+              href="/admin/properties"
+              className="flex items-center gap-1 rounded-full bg-[#FFA500] px-4 py-2 font-black text-black transition hover:bg-[#FFC107]"
+            >
+              <PackagePlus size={17} />
+              Properties Upload
             </Link>
 
             <Link

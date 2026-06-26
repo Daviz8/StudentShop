@@ -121,6 +121,7 @@ export default function CheckoutPage() {
               <div className="grid gap-4 md:grid-cols-2">
                 <input
                   value={customer.fullName}
+                    maxLength={150}
                   onChange={(e) => updateCustomer("fullName", e.target.value)}
                   type="text"
                   placeholder="Full name"
@@ -138,7 +139,7 @@ export default function CheckoutPage() {
                 <input
                   value={customer.phone}
                   onChange={(e) => updateCustomer("phone", e.target.value)}
-                    type="tel"
+                    type="number"
                   maxLength={11}
                   placeholder="Phone number"
                   className="rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3.5 text-sm outline-none transition focus:border-slate-950 focus:bg-white focus:ring-1 focus:ring-slate-950 md:col-span-2"
@@ -233,7 +234,7 @@ export default function CheckoutPage() {
                     {item.name}
                   </p>
 
-                  <p className="mt-0.5 text-xs font-semibold text-slate-400">
+                  <p className="mt-0.5 text-xs font-semibold text-slate-400"> 
                     Qty: {item.quantity}
                   </p>
                 </div>

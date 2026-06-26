@@ -3,8 +3,7 @@
 import AdminSellRequestCard from "../components/AdminSellRequestCard";
 
 async function getSellRequests() {
-  const baseUrl =
-    process.env.NEXT_PUBLIC_SITE_URL
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL
 
   try {
     const res = await fetch(
