@@ -118,7 +118,7 @@ export async function PATCH(request, context) {
       return NextResponse.json(
         {
           success: false,
-          message: "No admin offer found.",
+          message: "No admin offer found to respond to.",
         },
         { status: 400 }
       );
@@ -134,26 +134,18 @@ export async function PATCH(request, context) {
       );
     }
 
-    latestNegotiation.sellerResponse = response;
-    latestNegotiation.respondedAt = new Date();
-
-    // Save the user's counter offer
-    if (response === "rejected") {
-      latestNegotiation.counterPrice =
-        counterPrice && Number(counterPrice) > 0
-          ? Number(counterPrice)
-          : null;
-
-      latestNegotiation.counterMessage =
-        counterMessage?.trim() || "";
-    } else {
-      latestNegotiation.counterPrice = null;
-      latestNegotiation.counterMessage = "";
-    }
-
     if (response === "accepted") {
+      latestNegotiation.set({
+        sellerResponse: "accepted",
+        respondedAt: new Date(),
+        counterPrice: 0,
+        counterMessage: "",
+      });
+
       saleRequest.status = "offer_accepted";
       saleRequest.acceptedPrice = latestNegotiation.adminOfferPrice;
+
+      saleRequest.markModified("negotiations");
 
       await saleRequest.save();
 
@@ -165,13 +157,22 @@ export async function PATCH(request, context) {
       });
     }
 
-    // User rejected
+    // REJECTED
 
-    if (latestNegotiation.counterPrice) {
+    latestNegotiation.set({
+      sellerResponse: "rejected",
+      respondedAt: new Date(),
+      counterPrice: Number(counterPrice || 0),
+      counterMessage: counterMessage?.trim() || "",
+    });
+
+    if (Number(counterPrice || 0) > 0) {
       saleRequest.status = "counter_price_sent";
     } else {
       saleRequest.status = "negotiating";
     }
+
+    saleRequest.markModified("negotiations");
 
     await saleRequest.save();
 
@@ -183,19 +184,20 @@ export async function PATCH(request, context) {
         success: true,
         finalRejected: true,
         message:
-          "Third offer rejected. Negotiation limit reached. Request closed.",
+          "Third offer rejected. Negotiation limit reached. The request has been closed.",
       });
     }
 
     return NextResponse.json({
       success: true,
-      message: latestNegotiation.counterPrice
-        ? "Counter price sent successfully."
-        : "Offer rejected.",
+      message:
+        Number(counterPrice || 0) > 0
+          ? "Counter price sent successfully."
+          : "Offer rejected. Admin may send another offer.",
       saleRequest,
     });
   } catch (error) {
-    console.error(error);
+    console.error("RESPOND_TO_OFFER_ERROR:", error);
 
     return NextResponse.json(
       {

@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { NextResponse } from "next/server";
 import { connectDB } from "@/src/app/lib/db";
 import UserSale from "@/src/app/lib/models/UserSale";
