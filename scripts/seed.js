@@ -241,6 +241,16 @@ async function seed() {
         stock: 2,
         images: "/images/power-bank-ldn.webp",
         isActive: true,
+      },
+        {
+        name: "Test 50000mAh Power Bank",
+        description: "Ultra capacity backup battery station built for long blackouts.",
+        category: "Accessories",
+        condition: "brand_new",
+        price: 10,
+        stock: 1,
+        images: "/images/hero.webp",
+        isActive: true,
       }
     ]);
 

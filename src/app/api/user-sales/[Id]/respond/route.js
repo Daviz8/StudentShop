@@ -44,7 +44,7 @@ async function getIdFromRequest(request, context) {
   }
 }
 
-
+//TODO Test patch request in Prod.
 export async function PATCH(request, context) {
   try {
     const user = await getCurrentUser();
@@ -61,26 +61,23 @@ export async function PATCH(request, context) {
 
     await connectDB();
 
-   const id = await getIdFromRequest(request, context);
+    const id = await getIdFromRequest(request, context);
 
     if (!id || !mongoose.Types.ObjectId.isValid(id)) {
-      console.error("INVALID_USER_SALE_ID:", {
-        receivedId: id,
-        url: request.url,
-      });
-
       return NextResponse.json(
         {
           success: false,
           message: "Invalid sale request ID.",
-          receivedId: id || null,
         },
         { status: 400 }
       );
     }
-    const body = await request.json();
 
-    const response = body.response;
+    const {
+      response,
+      counterPrice,
+      counterMessage,
+    } = await request.json();
 
     if (!["accepted", "rejected"].includes(response)) {
       return NextResponse.json(
@@ -104,9 +101,7 @@ export async function PATCH(request, context) {
       );
     }
 
-    const submittedBy = saleRequest.submittedBy?.toString();
-
-    if (submittedBy !== user.id) {
+    if (saleRequest.submittedBy?.toString() !== user.id) {
       return NextResponse.json(
         {
           success: false,
@@ -116,7 +111,8 @@ export async function PATCH(request, context) {
       );
     }
 
-    const latestNegotiation = saleRequest.negotiations[saleRequest.negotiations.length - 1];
+    const latestNegotiation =
+      saleRequest.negotiations[saleRequest.negotiations.length - 1];
 
     if (!latestNegotiation) {
       return NextResponse.json(
@@ -138,12 +134,18 @@ export async function PATCH(request, context) {
       );
     }
 
-    latestNegotiation.sellerResponse = response;
-    latestNegotiation.respondedAt = new Date();
-
     if (response === "accepted") {
+      latestNegotiation.set({
+        sellerResponse: "accepted",
+        respondedAt: new Date(),
+        counterPrice: 0,
+        counterMessage: "",
+      });
+
       saleRequest.status = "offer_accepted";
       saleRequest.acceptedPrice = latestNegotiation.adminOfferPrice;
+
+      saleRequest.markModified("negotiations");
 
       await saleRequest.save();
 
@@ -155,23 +157,43 @@ export async function PATCH(request, context) {
       });
     }
 
-    if (response === "rejected" && saleRequest.negotiationCount >= 3) {
+    // REJECTED
+
+    latestNegotiation.set({
+      sellerResponse: "rejected",
+      respondedAt: new Date(),
+      counterPrice: Number(counterPrice || 0),
+      counterMessage: counterMessage?.trim() || "",
+    });
+
+    if (Number(counterPrice || 0) > 0) {
+      saleRequest.status = "counter_price_sent";
+    } else {
+      saleRequest.status = "negotiating";
+    }
+
+    saleRequest.markModified("negotiations");
+
+    await saleRequest.save();
+
+    if (saleRequest.negotiationCount >= 3) {
       await deleteCloudinaryImages(saleRequest.images);
       await UserSale.findByIdAndDelete(id);
 
       return NextResponse.json({
         success: true,
+        finalRejected: true,
         message:
           "Third offer rejected. Negotiation limit reached. The request has been closed.",
       });
     }
 
-    saleRequest.status = "negotiating";
-    await saleRequest.save();
-
     return NextResponse.json({
       success: true,
-      message: "Offer rejected. Admin may send another offer.",
+      message:
+        Number(counterPrice || 0) > 0
+          ? "Counter price sent successfully."
+          : "Offer rejected. Admin may send another offer.",
       saleRequest,
     });
   } catch (error) {
