@@ -185,10 +185,11 @@ export default function NavbarClient({ user }) {
             Student<span className="text-[#FFA500]">Shop</span> <span className="text-green-700">Nigeria</span>
           </Link>
 
-          <div className="hidden items-center gap-5 md:flex">
+          <div className="hidden items-center gap-5 md:flex ">
+          
             <Link
               href="/"
-              className="font-semibold text-black transition hover:text-[#FFA500]"
+              className=" font-semibold text-black transition hover:text-[#FFA500]"
             >
               Home
             </Link>
@@ -206,7 +207,7 @@ export default function NavbarClient({ user }) {
               className="flex items-center gap-1 rounded-full bg-[#FFA500] px-4 py-2 font-black text-black transition hover:bg-[#FFC107]"
             >
               <PackagePlus size={17} />
-              Properties Upload
+              Properties
             </Link>
 
             <Link
@@ -376,6 +377,16 @@ export default function NavbarClient({ user }) {
               >
                 <PackagePlus size={18} />
                 Product Upload
+              </Link>
+
+
+                <Link
+                href="/admin/propertiess"
+                className="flex items-center gap-2 rounded-2xl bg-[#FFA500] px-4 py-3 font-black text-black hover:bg-[#FFC107]"
+                onClick={closeMenu}
+              >
+                <PackagePlus size={18} />
+                Properties Upload
               </Link>
 
               <Link

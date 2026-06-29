@@ -44,7 +44,7 @@ async function getIdFromRequest(request, context) {
   }
 }
 
-
+//TODO Test patch request in Prod.
 export async function PATCH(request, context) {
   try {
     const user = await getCurrentUser();
@@ -61,26 +61,23 @@ export async function PATCH(request, context) {
 
     await connectDB();
 
-   const id = await getIdFromRequest(request, context);
+    const id = await getIdFromRequest(request, context);
 
     if (!id || !mongoose.Types.ObjectId.isValid(id)) {
-      console.error("INVALID_USER_SALE_ID:", {
-        receivedId: id,
-        url: request.url,
-      });
-
       return NextResponse.json(
         {
           success: false,
           message: "Invalid sale request ID.",
-          receivedId: id || null,
         },
         { status: 400 }
       );
     }
-    const body = await request.json();
 
-    const response = body.response;
+    const {
+      response,
+      counterPrice,
+      counterMessage,
+    } = await request.json();
 
     if (!["accepted", "rejected"].includes(response)) {
       return NextResponse.json(
@@ -104,9 +101,7 @@ export async function PATCH(request, context) {
       );
     }
 
-    const submittedBy = saleRequest.submittedBy?.toString();
-
-    if (submittedBy !== user.id) {
+    if (saleRequest.submittedBy?.toString() !== user.id) {
       return NextResponse.json(
         {
           success: false,
@@ -116,13 +111,14 @@ export async function PATCH(request, context) {
       );
     }
 
-    const latestNegotiation = saleRequest.negotiations[saleRequest.negotiations.length - 1];
+    const latestNegotiation =
+      saleRequest.negotiations[saleRequest.negotiations.length - 1];
 
     if (!latestNegotiation) {
       return NextResponse.json(
         {
           success: false,
-          message: "No admin offer found to respond to.",
+          message: "No admin offer found.",
         },
         { status: 400 }
       );
@@ -141,6 +137,20 @@ export async function PATCH(request, context) {
     latestNegotiation.sellerResponse = response;
     latestNegotiation.respondedAt = new Date();
 
+    // Save the user's counter offer
+    if (response === "rejected") {
+      latestNegotiation.counterPrice =
+        counterPrice && Number(counterPrice) > 0
+          ? Number(counterPrice)
+          : null;
+
+      latestNegotiation.counterMessage =
+        counterMessage?.trim() || "";
+    } else {
+      latestNegotiation.counterPrice = null;
+      latestNegotiation.counterMessage = "";
+    }
+
     if (response === "accepted") {
       saleRequest.status = "offer_accepted";
       saleRequest.acceptedPrice = latestNegotiation.adminOfferPrice;
@@ -155,27 +165,37 @@ export async function PATCH(request, context) {
       });
     }
 
-    if (response === "rejected" && saleRequest.negotiationCount >= 3) {
+    // User rejected
+
+    if (latestNegotiation.counterPrice) {
+      saleRequest.status = "counter_price_sent";
+    } else {
+      saleRequest.status = "negotiating";
+    }
+
+    await saleRequest.save();
+
+    if (saleRequest.negotiationCount >= 3) {
       await deleteCloudinaryImages(saleRequest.images);
       await UserSale.findByIdAndDelete(id);
 
       return NextResponse.json({
         success: true,
+        finalRejected: true,
         message:
-          "Third offer rejected. Negotiation limit reached. The request has been closed.",
+          "Third offer rejected. Negotiation limit reached. Request closed.",
       });
     }
 
-    saleRequest.status = "negotiating";
-    await saleRequest.save();
-
     return NextResponse.json({
       success: true,
-      message: "Offer rejected. Admin may send another offer.",
+      message: latestNegotiation.counterPrice
+        ? "Counter price sent successfully."
+        : "Offer rejected.",
       saleRequest,
     });
   } catch (error) {
-    console.error("RESPOND_TO_OFFER_ERROR:", error);
+    console.error(error);
 
     return NextResponse.json(
       {
