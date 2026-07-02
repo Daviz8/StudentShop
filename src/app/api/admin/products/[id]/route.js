@@ -5,6 +5,7 @@ import Product from "@/src/app/lib/models/Product";
 import { getCurrentUser } from "@/src/app/lib/getCurrentUser";
 import { isMainAdminEmail } from "@/src/app/lib/admin";
 
+
 async function requireAdmin() {
   const user = await getCurrentUser();
 
@@ -51,7 +52,7 @@ export async function PATCH(request, context) {
     await connectDB();
 
     const params = await context.params;
-    const id = params?._id;
+const id = params?.id || params?._id;
 
     if (!id || !mongoose.Types.ObjectId.isValid(id)) {
       return NextResponse.json(
@@ -118,7 +119,7 @@ export async function DELETE(request, context) {
     await connectDB();
 
     const params = await context.params;
-    const id = params?.id;
+  const id = params?.id || params?._id;
 
     if (!id || !mongoose.Types.ObjectId.isValid(id)) {
       return NextResponse.json(
