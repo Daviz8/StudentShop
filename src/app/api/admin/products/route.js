@@ -1,9 +1,15 @@
+
+
+
 import { NextResponse } from "next/server";
 import { connectDB } from "@/src/app/lib/db";
 import Product from "@/src/app/lib/models/Product";
 import { getCurrentUser } from "@/src/app/lib/getCurrentUser";
 import { isMainAdminEmail } from "@/src/app/lib/admin";
 import { uploadImages } from "@/src/app/lib/uploadImages";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 async function requireAdmin() {
   const user = await getCurrentUser();
@@ -40,6 +46,10 @@ async function requireAdmin() {
   };
 }
 
+function getErrorMessage(error) {
+  return error instanceof Error ? error.message : "An unexpected error occurred.";
+}
+
 export async function GET() {
   try {
     const admin = await requireAdmin();
@@ -50,11 +60,13 @@ export async function GET() {
 
     await connectDB();
 
-    const products = await Product.find({}).sort({ createdAt: -1 }).lean();
+    const products = await Product.find({})
+      .sort({ createdAt: -1 })
+      .lean();
 
     return NextResponse.json({
       success: true,
-      products: JSON.parse(JSON.stringify(products)),
+      products,
     });
   } catch (error) {
     console.error("ADMIN_GET_PRODUCTS_ERROR:", error);
@@ -62,7 +74,7 @@ export async function GET() {
     return NextResponse.json(
       {
         success: false,
-        message: error.message || "Failed to fetch products.",
+        message: getErrorMessage(error) || "Failed to fetch products.",
       },
       { status: 500 }
     );
@@ -84,24 +96,60 @@ export async function POST(request) {
     const name = String(formData.get("name") || "").trim();
     const description = String(formData.get("description") || "").trim();
     const category = String(formData.get("category") || "Gadget").trim();
-    const condition = String(formData.get("condition") || "verified").trim();
+    const condition = String(
+      formData.get("condition") || "verified"
+    ).trim();
+
     const price = Number(formData.get("price") || 0);
     const stock = Number(formData.get("stock") || 0);
-    const isActive = String(formData.get("isActive") || "true") === "true";
+    const isActive =
+      String(formData.get("isActive") || "true") === "true";
 
-    const files = formData.getAll("images");
+    const files = formData
+      .getAll("images")
+      .filter((entry) => entry instanceof File && entry.size > 0);
 
-    if (!name || !description || !price || stock < 0) {
+    if (!name) {
       return NextResponse.json(
         {
           success: false,
-          message: "Name, description, valid price and stock are required.",
+          message: "Product name is required.",
         },
         { status: 400 }
       );
     }
 
-    if (!files || files.length === 0) {
+    if (!description) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Product description is required.",
+        },
+        { status: 400 }
+      );
+    }
+
+    if (!Number.isFinite(price) || price <= 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Enter a valid product price.",
+        },
+        { status: 400 }
+      );
+    }
+
+    if (!Number.isInteger(stock) || stock < 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Enter a valid stock quantity.",
+        },
+        { status: 400 }
+      );
+    }
+
+    if (files.length === 0) {
       return NextResponse.json(
         {
           success: false,
@@ -121,28 +169,25 @@ export async function POST(request) {
       );
     }
 
-    const uploadedImages = [];
+    const uploadedImageUrls = [];
+    const maxSize = 5 * 1024 * 1024;
 
     for (const file of files) {
-      if (!file || typeof file === "string") continue;
-
       if (!file.type.startsWith("image/")) {
         return NextResponse.json(
           {
             success: false,
-            message: "Only image files are allowed.",
+            message: `${file.name} is not a valid image file.`,
           },
           { status: 400 }
         );
       }
 
-      const maxSize = 5 * 1024 * 1024;
-
       if (file.size > maxSize) {
         return NextResponse.json(
           {
             success: false,
-            message: "Each image must not be larger than 5MB.",
+            message: `${file.name} is larger than 5MB.`,
           },
           { status: 400 }
         );
@@ -155,10 +200,14 @@ export async function POST(request) {
         folder: "student-shop-products",
       });
 
-      uploadedImages.push({
-        url: uploaded.secure_url,
-        publicId: uploaded.public_id,
-      });
+      const imageUrl = uploaded?.secure_url || uploaded?.url;
+
+      if (!imageUrl) {
+        throw new Error(`Cloudinary upload failed for ${file.name}.`);
+      }
+
+      // Product.images expects string URLs, not objects.
+      uploadedImageUrls.push(imageUrl);
     }
 
     const product = await Product.create({
@@ -168,7 +217,7 @@ export async function POST(request) {
       condition,
       price,
       stock,
-      images: uploadedImages,
+      images: uploadedImageUrls,
       isActive,
       createdBy: admin.user.id,
     });
@@ -187,7 +236,7 @@ export async function POST(request) {
     return NextResponse.json(
       {
         success: false,
-        message: error.message || "Failed to upload product.",
+        message: getErrorMessage(error) || "Failed to upload product.",
       },
       { status: 500 }
     );
