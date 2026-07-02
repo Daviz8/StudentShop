@@ -1,4 +1,6 @@
 
+
+
 import { NextResponse } from "next/server";
 import { connectDB } from "@/src/app/lib/db";
 import Property from "@/src/app/lib/models/Property";
@@ -8,6 +10,8 @@ import { uploadImages } from "@/src/app/lib/uploadImages";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+const ALLOWED_CONDITIONS = ["new", "used", "fairly used"];
 
 async function requireAdmin() {
   const user = await getCurrentUser();
@@ -45,7 +49,9 @@ async function requireAdmin() {
 }
 
 function getErrorMessage(error) {
-  return error instanceof Error ? error.message : "An unexpected error occurred.";
+  return error instanceof Error
+    ? error.message
+    : "An unexpected error occurred.";
 }
 
 export async function GET() {
@@ -96,18 +102,26 @@ export async function POST(request) {
     const category = String(
       formData.get("category") || "Property"
     ).trim();
+
     const condition = String(
-      formData.get("condition") || "verified"
-    ).trim();
+      formData.get("condition") || "new"
+    )
+      .trim()
+      .toLowerCase();
 
     const price = Number(formData.get("price") || 0);
     const stock = Number(formData.get("stock") || 0);
+
     const isActive =
-      String(formData.get("isActive") || "true") === "true";
+      String(formData.get("isActive") || "true").toLowerCase() === "true";
 
     const files = formData
       .getAll("images")
-      .filter((entry) => entry instanceof File && entry.size > 0);
+      .filter(
+        (entry) =>
+          entry instanceof File &&
+          entry.size > 0
+      );
 
     if (!name) {
       return NextResponse.json(
@@ -124,6 +138,28 @@ export async function POST(request) {
         {
           success: false,
           message: "Property description is required.",
+        },
+        { status: 400 }
+      );
+    }
+
+    if (!category) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Property category is required.",
+        },
+        { status: 400 }
+      );
+    }
+
+    if (!ALLOWED_CONDITIONS.includes(condition)) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: `Condition must be one of: ${ALLOWED_CONDITIONS.join(
+            ", "
+          )}.`,
         },
         { status: 400 }
       );
@@ -203,10 +239,11 @@ export async function POST(request) {
       const imageUrl = uploaded?.secure_url || uploaded?.url;
 
       if (!imageUrl) {
-        throw new Error(`Cloudinary upload failed for ${file.name}.`);
+        throw new Error(
+          `Cloudinary upload failed for ${file.name}.`
+        );
       }
 
-      // Property.images expects string URLs, not objects.
       uploadedImageUrls.push(imageUrl);
     }
 
