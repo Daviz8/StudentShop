@@ -246,7 +246,6 @@ export default function AdminPropertiesPage() {
                   onChange={(e) => updateField("condition", e.target.value)}
                   className="rounded-2xl border border-black/10 px-4 py-3 outline-none focus:border-[#FFA500]"
                 >
-                  <option value="verified">Verified</option>
                   <option value="new">New</option>
                   <option value="used">Used</option>
                   <option value="fairly_used">Fairly Used</option>
