@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 const gadgets = [
   { label: "Laptop", emoji: "💻", top: "-10%", left: "-10%" },
@@ -14,11 +14,10 @@ const gadgets = [
 export default function Home() {
   const router = useRouter();
 
-  const launchDate = new Date();
-  launchDate.setDate(launchDate.getDate() + 10);
+  const launchDate = useMemo(() => new Date("2026-07-10T12:00:00+01:00"), [] );
 
   const calculateTimeLeft = () => {
-    const difference = launchDate - new Date();
+    const difference = launchDate.getTime() - Date.now();
 
     if (difference <= 0) {
       return {
@@ -35,7 +34,7 @@ export default function Home() {
         (difference / (1000 * 60 * 60)) % 24
       ),
       minutes: Math.floor(
-        (difference / 1000 / 60) % 60
+        (difference / (1000 * 60)) % 60
       ),
       seconds: Math.floor(
         (difference / 1000) % 60
@@ -43,9 +42,7 @@ export default function Home() {
     };
   };
 
-  const [timeLeft, setTimeLeft] = useState(
-    calculateTimeLeft()
-  );
+  const [timeLeft, setTimeLeft] = useState(calculateTimeLeft);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -53,7 +50,7 @@ export default function Home() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [launchDate]);
 
   const randomRoute = () => {
     const routes = ["/store", "/properties"];
@@ -68,7 +65,7 @@ export default function Home() {
   return (
     <main className="min-h-screen overflow-hidden bg-gradient-to-br from-[#FFA500] via-[#FFC107] to-[#f59e0b] text-black">
       <section className="relative mx-auto flex min-h-screen max-w-7xl flex-col items-center justify-center px-5 py-10 lg:grid lg:grid-cols-2 lg:gap-10">
-        
+
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 0.35, y: 0 }}
@@ -78,7 +75,7 @@ export default function Home() {
 
         {/* LEFT CONTENT */}
         <div className="relative z-20 order-2 mt-8 text-center lg:order-1 lg:mt-0 lg:text-left">
-          
+
           {/* TOP BADGES */}
           <div className="mb-4 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
             <motion.p
@@ -106,7 +103,8 @@ export default function Home() {
             transition={{ delay: 0.15 }}
             className="text-5xl font-black leading-tight tracking-tight md:text-6xl font-Mont"
           >
-            Buy, Sell, Swap <br />
+            Buy, Sell, Swap
+            <br />
             Easily.
           </motion.h1>
 
@@ -169,22 +167,10 @@ export default function Home() {
             {/* COUNTDOWN */}
             <div className="mt-5 grid grid-cols-4 gap-3">
               {[
-                {
-                  label: "Days",
-                  value: timeLeft.days,
-                },
-                {
-                  label: "Hours",
-                  value: timeLeft.hours,
-                },
-                {
-                  label: "Minutes",
-                  value: timeLeft.minutes,
-                },
-                {
-                  label: "Seconds",
-                  value: timeLeft.seconds,
-                },
+                { label: "Days", value: timeLeft.days },
+                { label: "Hours", value: timeLeft.hours },
+                { label: "Minutes", value: timeLeft.minutes },
+                { label: "Seconds", value: timeLeft.seconds },
               ].map((item) => (
                 <div
                   key={item.label}
@@ -211,14 +197,14 @@ export default function Home() {
           >
             <button
               onClick={() => router.push("/signup")}
-              className="rounded-2xl bg-black px-8 py-4 text-base font-black text-white shadow-xl transition hover:scale-105 cursor-pointer"
+              className="cursor-pointer rounded-2xl bg-black px-8 py-4 text-base font-black text-white shadow-xl transition hover:scale-105"
             >
               Join Beta
             </button>
 
             <button
               onClick={randomRoute}
-              className="rounded-2xl border-2 border-black bg-white/80 px-8 py-4 text-base font-black text-black shadow-xl backdrop-blur transition hover:scale-105 cursor-pointer"
+              className="cursor-pointer rounded-2xl border-2 border-black bg-white/80 px-8 py-4 text-base font-black text-black shadow-xl backdrop-blur transition hover:scale-105"
             >
               Explore Marketplace
             </button>
@@ -245,12 +231,12 @@ export default function Home() {
               ease: "easeInOut",
             },
           }}
-          className="relative z-20 order-1 flex justify-center lg:order-2 w-full max-w-md mx-auto"
+          className="relative z-20 order-1 mx-auto flex w-full max-w-md justify-center lg:order-2"
         >
           {gadgets.map((item, index) => (
             <motion.div
               key={item.label}
-              className="absolute z-10 flex h-20 w-20 md:h-24 md:w-24 lg:h-28 lg:w-28 items-center justify-center rounded-2xl text-2xl md:text-3xl shadow-xl backdrop-blur bg-white/10"
+              className="absolute z-10 flex h-20 w-20 items-center justify-center rounded-2xl bg-white/10 text-2xl shadow-xl backdrop-blur md:h-24 md:w-24 md:text-3xl lg:h-28 lg:w-28"
               style={{
                 top: item.top,
                 left: item.left,
@@ -274,7 +260,7 @@ export default function Home() {
           <img
             src="/images/hero-bg.webp"
             alt="Student Shop Nigeria"
-            className="max-h-[300px] w-full max-w-md object-contain drop-shadow-2xl rounded-md hidden md:block"
+            className="hidden max-h-[300px] w-full max-w-md rounded-md object-contain drop-shadow-2xl md:block"
           />
         </motion.div>
       </section>
