@@ -14,7 +14,7 @@ const gadgets = [
 export default function Home() {
   const router = useRouter();
 
-  const launchDate = useMemo(() => new Date("2026-07-10T12:00:00+01:00"), [] );
+  const launchDate = useMemo(() => new Date("2026-07-14T12:00:00+01:00"), [] );
 
   const calculateTimeLeft = () => {
     const difference = launchDate.getTime() - Date.now();
