@@ -21,6 +21,15 @@ export const footerLinks = [
         name: "Return policy",
         url: "/return",
       },
+
+        {
+        name: "Privacy policy",
+        url: "/privacy",
+      },
+        {
+        name: "Terms & Conditions",
+        url: "/terms",
+      },
     ],
   },
 ];
