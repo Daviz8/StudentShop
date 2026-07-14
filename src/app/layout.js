@@ -3,6 +3,7 @@ import "./globals.css";
 
 import Navbar from "./components/Navbar";
 import GoogleOAuthProviderWrapper from "./components/GoogleOAuthProviderWrapper";
+import Footer from "./components/Footer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -44,6 +45,7 @@ export default function RootLayout({ children }) {
           <main className="flex-1 w-full">
             {children}
           </main>
+          <Footer/>
 </GoogleOAuthProviderWrapper>
       </body>
     </html>
