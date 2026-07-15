@@ -35,7 +35,7 @@ export default function CheckoutPage() {
     0
   );
 
-  const escrowFee = cartItems.length > 0 ? 1500 : 0;
+  const escrowFee = cartItems.length > 0 ? 0 : 0;
 
   const shippingFee =
     cartItems.length > 0 && deliveryMethod === "standard" ? 3000 : 0;

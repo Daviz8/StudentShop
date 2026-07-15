@@ -4,9 +4,27 @@ import { verifyPaystackTransaction } from "../../lib/Paystack";
 import { connectDB } from "../../lib/db";
 import Order from "../../lib/models/Order";
 
+export const dynamic = "force-dynamic";
+
+function getReference(searchParams) {
+  const referenceParam = searchParams?.reference || searchParams?.trxref;
+
+  if (Array.isArray(referenceParam)) {
+    return String(referenceParam[0] || "").trim();
+  }
+
+  return String(referenceParam || "").trim();
+}
+
+function getErrorMessage(error) {
+  return error instanceof Error
+    ? error.message
+    : "Payment verification failed.";
+}
+
 export default async function PaymentCallbackPage({ searchParams }) {
   const params = await searchParams;
-  const reference = params?.reference;
+  const reference = getReference(params);
 
   let status = "failed";
   let message = "Payment verification failed.";
@@ -22,7 +40,11 @@ export default async function PaymentCallbackPage({ searchParams }) {
     const paymentData = await verifyPaystackTransaction(reference);
 
     const order = await Order.findOne({
-      paymentReference: reference,
+      $or: [
+        { paymentReference: reference },
+        { paystackReference: reference },
+        { reference },
+      ],
     });
 
     if (!order) {
@@ -31,17 +53,40 @@ export default async function PaymentCallbackPage({ searchParams }) {
 
     orderId = order._id.toString();
 
-    if (paymentData.status === "success") {
+    if (order.status === "paid" || order.paymentStatus === "paid") {
+      status = "success";
+      message = "Payment already confirmed. Your order is paid.";
+    } else if (paymentData.status === "success") {
       order.status = "paid";
-      order.paidAt = new Date();
+      order.paymentStatus = "paid";
+
+      order.paymentProvider = "paystack";
+      order.paymentMethod = "paystack";
+
+      order.paymentReference = reference;
+      order.paystackReference = reference;
+
+      order.amountPaid = Number(paymentData.amount || 0) / 100;
+      order.currency = paymentData.currency || "NGN";
+      order.paidAt = paymentData.paid_at
+        ? new Date(paymentData.paid_at)
+        : new Date();
+
+      order.paystackTransactionId = paymentData.id;
+      order.paystackChannel = paymentData.channel || "";
       order.paystackData = paymentData;
+      order.paystackRaw = paymentData;
+
       await order.save();
 
       status = "success";
       message = "Payment successful. Your order has been confirmed.";
     } else {
       order.status = "failed";
+      order.paymentStatus = "failed";
       order.paystackData = paymentData;
+      order.paystackRaw = paymentData;
+
       await order.save();
 
       status = "failed";
@@ -49,7 +94,7 @@ export default async function PaymentCallbackPage({ searchParams }) {
     }
   } catch (error) {
     console.error("PAYMENT_CALLBACK_ERROR:", error);
-    message = error.message || "Payment verification failed.";
+    message = getErrorMessage(error);
   }
 
   return (
@@ -71,11 +116,17 @@ export default async function PaymentCallbackPage({ searchParams }) {
 
         <p className="mt-3 text-black/60">{message}</p>
 
-        {orderId && (
+        {reference ? (
+          <p className="mt-3 rounded-2xl bg-slate-50 p-3 text-xs font-bold text-black/50">
+            Reference: {reference}
+          </p>
+        ) : null}
+
+        {orderId ? (
           <p className="mt-3 rounded-2xl bg-slate-50 p-3 text-sm font-bold text-black/60">
             Order ID: {orderId}
           </p>
-        )}
+        ) : null}
 
         <div className="mt-6 grid gap-3">
           <Link

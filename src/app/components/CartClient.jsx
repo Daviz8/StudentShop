@@ -53,7 +53,7 @@ export default function CartClient() {
     0
   );
 
-  const serviceFee = cartItems.length > 0 ? 1500 : 0;
+  const serviceFee = cartItems.length > 0 ? 0 : 0;
   const orderTotal = subtotal + serviceFee;
 
   if (cartItems.length === 0) {
