@@ -2,7 +2,6 @@
 
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
 
 const gadgets = [
   { label: "Laptop", emoji: "💻", top: "-10%", left: "-10%" },
@@ -14,51 +13,9 @@ const gadgets = [
 export default function Home() {
   const router = useRouter();
 
-  const launchDate = useMemo(() => new Date("2026-07-18T12:00:00+01:00"), [] );
-
-  const calculateTimeLeft = () => {
-    const difference = launchDate.getTime() - Date.now();
-
-    if (difference <= 0) {
-      return {
-        days: 0,
-        hours: 0,
-        minutes: 0,
-        seconds: 0,
-      };
-    }
-
-    return {
-      days: Math.floor(difference / (1000 * 60 * 60 * 24)),
-      hours: Math.floor(
-        (difference / (1000 * 60 * 60)) % 24
-      ),
-      minutes: Math.floor(
-        (difference / (1000 * 60)) % 60
-      ),
-      seconds: Math.floor(
-        (difference / 1000) % 60
-      ),
-    };
-  };
-
-  const [timeLeft, setTimeLeft] = useState(calculateTimeLeft);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft(calculateTimeLeft());
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [launchDate]);
-
   const randomRoute = () => {
     const routes = ["/store", "/properties"];
-
-    const randomIndex = Math.floor(
-      Math.random() * routes.length
-    );
-
+    const randomIndex = Math.floor(Math.random() * routes.length);
     router.push(routes[randomIndex]);
   };
 
@@ -85,15 +42,6 @@ export default function Home() {
             >
               Student Shop Nigeria
             </motion.p>
-
-            <motion.div
-              initial={{ opacity: 0, scale: 0.7 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.3 }}
-              className="rounded-full border border-black bg-white/80 px-4 py-2 text-xs font-black uppercase tracking-widest backdrop-blur"
-            >
-              Beta Version
-            </motion.div>
           </div>
 
           {/* TITLE */}
@@ -148,58 +96,18 @@ export default function Home() {
             secure payments, and delivery.
           </motion.p>
 
-          {/* BETA NOTICE */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1 }}
-            className="mt-6 rounded-3xl border border-black/10 bg-white/40 p-5 backdrop-blur"
-          >
-            <p className="text-sm font-bold text-black/80">
-              🚀 Currently in public beta testing.
-            </p>
-
-            <p className="mt-2 text-sm text-black/70">
-              We are preparing for full launch. Some features
-              may still be improving as we test the platform.
-            </p>
-
-            {/* COUNTDOWN */}
-            <div className="mt-5 grid grid-cols-4 gap-3">
-              {[
-                { label: "Days", value: timeLeft.days },
-                { label: "Hours", value: timeLeft.hours },
-                { label: "Minutes", value: timeLeft.minutes },
-                { label: "Seconds", value: timeLeft.seconds },
-              ].map((item) => (
-                <div
-                  key={item.label}
-                  className="rounded-2xl bg-black p-3 text-center text-white"
-                >
-                  <div className="text-2xl font-black">
-                    {String(item.value).padStart(2, "0")}
-                  </div>
-
-                  <div className="text-xs uppercase tracking-widest text-white/60">
-                    {item.label}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-
           {/* BUTTONS */}
           <motion.div
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.2 }}
+            transition={{ delay: 1.0 }}
             className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center lg:justify-start"
           >
             <button
               onClick={() => router.push("/signup")}
               className="cursor-pointer rounded-2xl bg-black px-8 py-4 text-base font-black text-white shadow-xl transition hover:scale-105"
             >
-              Join Beta
+              Get Started
             </button>
 
             <button

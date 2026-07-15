@@ -43,13 +43,32 @@ export async function verifyPaystackTransaction(reference) {
     throw new Error("PAYSTACK_SECRET_KEY is missing in .env.local");
   }
 
+  const cleanReference = String(reference || "").trim();
+
+  if (!cleanReference) {
+    throw new Error("Payment reference is missing.");
+  }
+
+  console.log("VERIFYING_PAYSTACK_REFERENCE:", cleanReference);
+  console.log(
+    "PAYSTACK_KEY_MODE:",
+    process.env.PAYSTACK_SECRET_KEY.startsWith("sk_live_")
+      ? "LIVE"
+      : process.env.PAYSTACK_SECRET_KEY.startsWith("sk_test_")
+        ? "TEST"
+        : "UNKNOWN"
+  );
+
   const response = await fetch(
-    `${PAYSTACK_BASE_URL}/transaction/verify/${encodeURIComponent(reference)}`,
+    `${PAYSTACK_BASE_URL}/transaction/verify/${encodeURIComponent(
+      cleanReference
+    )}`,
     {
       method: "GET",
       headers: {
         Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
       },
+      cache: "no-store",
     }
   );
 
@@ -63,61 +82,3 @@ export async function verifyPaystackTransaction(reference) {
 
   return data.data;
 }
-
-const payNow = async () => {
-  if (!customer.fullName || !customer.email || !customer.phone) {
-    alert("Please enter your full name, email and phone number");
-    return;
-  }
-
-  if (deliveryMethod === "standard" && !customer.address) {
-    alert("Please enter your delivery address");
-    return;
-  }
-
-  if (cartItems.length === 0) {
-    alert("Your cart is empty");
-    return;
-  }
-
-  setLoading(true);
-
-  try {
-    const res = await fetch("/api/orders/checkout", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        customer,
-        deliveryMethod,
-        shippingFee,
-        escrowFee,
-        items: cartItems,
-      }),
-    });
-
-    const data = await res.json();
-
-    console.log("CHECKOUT_RESPONSE:", data);
-
-    if (!res.ok || !data.success) {
-      alert(data.message || "Payment initialization failed");
-      return;
-    }
-
-    if (!data.payment?.authorizationUrl) {
-      console.error("PAYSTACK_AUTH_URL_MISSING:", data);
-      alert("Paystack authorization URL was not returned by the server.");
-      return;
-    }
-
-    localStorage.setItem("pending_order_id", data.order._id);
-    window.location.href = data.payment.authorizationUrl;
-  } catch (error) {
-    console.error("PAYSTACK_CHECKOUT_ERROR:", error);
-    alert("Something went wrong while starting payment");
-  } finally {
-    setLoading(false);
-  }
-};
