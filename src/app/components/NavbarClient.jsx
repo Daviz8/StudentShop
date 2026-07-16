@@ -1,24 +1,8 @@
-
-
-
-
-
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import Link from "next/link";
-import { Bell,
-  CalendarDays,
-  Clock,
-  LayoutDashboard,
-  LogOut,
-  Menu,
-  MessageSquare,
-  PackagePlus,
-  ShieldCheck,
-  ShoppingCart,
-  UserRound,
-  X,
-} from "lucide-react";
+import { Bell,CalendarDays, Clock,LayoutDashboard,LogOut,Menu, MessageSquare, PackagePlus,ShieldCheck, ShoppingCart,UserRound, X,} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
@@ -48,7 +32,7 @@ export default function NavbarClient({ user }) {
 
     setOpen(false);
     setNotificationOpen(false);
-    router.push("/signup");
+    router.push("/signin");
     router.refresh();
   };
 
@@ -666,13 +650,25 @@ export default function NavbarClient({ user }) {
               </button>
             </div>
           ) : (
-            <Link
-              href="/signup"
-              className="rounded-full bg-black px-5 py-2 font-bold text-white transition hover:bg-[#FFA500] hover:text-black"
-            >
-              Sign Up
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link
+                href="/signup"
+                className="rounded-full bg-black px-5 py-2 font-bold text-white transition hover:bg-[#FFA500] hover:text-black"
+              >
+                Sign Up
+              </Link>
+
+              <Link
+                href="/signin"
+                className="rounded-full bg-black px-5 py-2 font-bold text-white transition hover:bg-[#FFA500] hover:text-black"
+              >
+                Sign In
+              </Link>
+            </div>
           )}
+       
+            
+    
         </div>
 
         <button
@@ -749,7 +745,7 @@ export default function NavbarClient({ user }) {
             )}
 
             <Link
-              href={isLoggedIn ? "/cart" : "/signup"}
+              href={isLoggedIn ? "/cart" : "/signin"}
               className="flex items-center gap-2 rounded-2xl bg-[#FFA500] px-4 py-3 font-black text-black hover:bg-[#FFC107]"
               onClick={closeMenu}
             >
@@ -794,6 +790,16 @@ export default function NavbarClient({ user }) {
                   </button>
                 </div>
               ) : (
+                 <div >
+              <Link
+                href="/signin"
+                className="block rounded-2xl bg-black px-4 py-3 text-center font-black text-white"
+                   onClick={closeMenu}
+              >
+                Sign In
+              </Link>
+        
+      <br />
                 <Link
                   href="/signup"
                   className="block rounded-2xl bg-black px-4 py-3 text-center font-black text-white"
@@ -801,6 +807,8 @@ export default function NavbarClient({ user }) {
                 >
                   Sign Up
                 </Link>
+    </div>
+                
               )}
             </div>
           </div>
