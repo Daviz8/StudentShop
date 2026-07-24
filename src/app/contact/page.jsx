@@ -16,6 +16,8 @@ import {
   Send,
   Sparkles,
 } from "lucide-react";
+import { NewsletterForm } from "../components/Emails";
+import { UnsubscribeNewsletterForm } from "../components/Emails";
 
 const services = [
   "We buy quality items from students and families.",
@@ -312,6 +314,10 @@ export default function ContactPage() {
             </div>
           </div>
         </form>
+
+
+        <NewsletterForm/>
+        <UnsubscribeNewsletterForm/>
       </section>
     </main>
   );
