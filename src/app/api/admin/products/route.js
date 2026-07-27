@@ -1,6 +1,3 @@
-
-
-
 import { NextResponse } from "next/server";
 import { connectDB } from "@/src/app/lib/db";
 import Product from "@/src/app/lib/models/Product";
@@ -10,6 +7,19 @@ import { uploadImages } from "@/src/app/lib/uploadImages";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+const PRODUCT_CATEGORIES = [
+  "Gadget",
+  "Phones",
+  "Powerbanks",
+  "Audio",
+  "Laptops",
+  "Furniture",
+  "Home Essentials",
+  "Books",
+];
+
+const PRODUCT_CONDITIONS = ["new", "used", "fairly_used"];
 
 async function requireAdmin() {
   const user = await getCurrentUser();
@@ -47,7 +57,9 @@ async function requireAdmin() {
 }
 
 function getErrorMessage(error) {
-  return error instanceof Error ? error.message : "An unexpected error occurred.";
+  return error instanceof Error
+    ? error.message
+    : "An unexpected error occurred.";
 }
 
 export async function GET() {
@@ -60,9 +72,7 @@ export async function GET() {
 
     await connectDB();
 
-    const products = await Product.find({})
-      .sort({ createdAt: -1 })
-      .lean();
+    const products = await Product.find({}).sort({ createdAt: -1 }).lean();
 
     return NextResponse.json({
       success: true,
@@ -96,14 +106,16 @@ export async function POST(request) {
     const name = String(formData.get("name") || "").trim();
     const description = String(formData.get("description") || "").trim();
     const category = String(formData.get("category") || "Gadget").trim();
-    const condition = String(
-      formData.get("condition") || "verified"
-    ).trim();
+
+    const condition = String(formData.get("condition") || "new")
+      .trim()
+      .toLowerCase();
 
     const price = Number(formData.get("price") || 0);
     const stock = Number(formData.get("stock") || 0);
+
     const isActive =
-      String(formData.get("isActive") || "true") === "true";
+      String(formData.get("isActive") || "true").toLowerCase() === "true";
 
     const files = formData
       .getAll("images")
@@ -124,6 +136,26 @@ export async function POST(request) {
         {
           success: false,
           message: "Product description is required.",
+        },
+        { status: 400 }
+      );
+    }
+
+    if (!PRODUCT_CATEGORIES.includes(category)) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: `Category must be one of: ${PRODUCT_CATEGORIES.join(", ")}.`,
+        },
+        { status: 400 }
+      );
+    }
+
+    if (!PRODUCT_CONDITIONS.includes(condition)) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: `Condition must be one of: ${PRODUCT_CONDITIONS.join(", ")}.`,
         },
         { status: 400 }
       );
@@ -206,7 +238,6 @@ export async function POST(request) {
         throw new Error(`Cloudinary upload failed for ${file.name}.`);
       }
 
-      // Product.images expects string URLs, not objects.
       uploadedImageUrls.push(imageUrl);
     }
 

@@ -1,18 +1,22 @@
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
-export async function POST() {
-  const response = NextResponse.json({
-    success: true,
-    message: "Logged out successfully",
-  });
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
-  response.cookies.set("student_shop_token", "", {
+export async function POST() {
+  const cookieStore = await cookies();
+
+  cookieStore.set("student_shop_token", "", {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
     path: "/",
     maxAge: 0,
   });
 
-  return response;
+  return NextResponse.json({
+    success: true,
+    message: "Logged out successfully.",
+  });
 }

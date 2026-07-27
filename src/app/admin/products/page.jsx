@@ -1,17 +1,55 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, PackagePlus, Trash2, RefreshCw, Eye, EyeOff, X } from "lucide-react";
+import {
+  Loader2,
+  PackagePlus,
+  Trash2,
+  RefreshCw,
+  Eye,
+  EyeOff,
+  X,
+} from "lucide-react";
+
+const PRODUCT_CATEGORIES = [
+  "Gadget",
+  "Phones",
+  "Powerbanks",
+  "Audio",
+  "Laptops",
+  "Furniture",
+  "Home Essentials",
+  "Books",
+];
+
+const PRODUCT_CONDITIONS = [
+  {
+    label: "New",
+    value: "new",
+  },
+  {
+    label: "Used",
+    value: "used",
+  },
+  {
+    label: "Fairly Used",
+    value: "fairly_used",
+  },
+];
 
 const initialForm = {
   name: "",
   description: "",
-  category: "",
-  condition: "",
+  category: "Gadget",
+  condition: "new",
   price: "",
   stock: "",
   isActive: true,
 };
+
+function formatCondition(value) {
+  return String(value || "").replaceAll("_", " ");
+}
 
 export default function AdminProductsPage() {
   const [form, setForm] = useState(initialForm);
@@ -45,6 +83,7 @@ export default function AdminProductsPage() {
 
       setProducts(data.products || []);
     } catch (error) {
+      console.error("LOAD_PRODUCTS_ERROR:", error);
       alert("Failed to load products");
     } finally {
       setLoadingProducts(false);
@@ -53,6 +92,11 @@ export default function AdminProductsPage() {
 
   useEffect(() => {
     loadProducts();
+
+    return () => {
+      previews.forEach((url) => URL.revokeObjectURL(url));
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleImageChange = (event) => {
@@ -101,8 +145,15 @@ export default function AdminProductsPage() {
   const uploadProduct = async (event) => {
     event.preventDefault();
 
-    if (!form.name || !form.description || !form.price || !form.stock) {
-      alert("Name, description, price and stock are required.");
+    if (
+      !form.name ||
+      !form.description ||
+      !form.category ||
+      !form.condition ||
+      !form.price ||
+      form.stock === ""
+    ) {
+      alert("Name, description, category, condition, price and stock are required.");
       return;
     }
 
@@ -146,6 +197,7 @@ export default function AdminProductsPage() {
 
       await loadProducts();
     } catch (error) {
+      console.error("UPLOAD_PRODUCT_ERROR:", error);
       alert("Something went wrong while uploading product.");
     } finally {
       setSubmitting(false);
@@ -173,6 +225,7 @@ export default function AdminProductsPage() {
 
       await loadProducts();
     } catch (error) {
+      console.error("TOGGLE_PRODUCT_ERROR:", error);
       alert("Failed to update product");
     }
   };
@@ -196,6 +249,7 @@ export default function AdminProductsPage() {
 
       await loadProducts();
     } catch (error) {
+      console.error("DELETE_PRODUCT_ERROR:", error);
       alert("Failed to delete product");
     }
   };
@@ -208,22 +262,24 @@ export default function AdminProductsPage() {
             Admin Dashboard
           </p>
 
-          <h1 className="mt-2 text-3xl font-black sm:mt-3 sm:text-4xl">Manage Products</h1>
+          <h1 className="mt-2 text-3xl font-black sm:mt-3 sm:text-4xl">
+            Manage Products
+          </h1>
 
           <p className="mt-3 max-w-2xl text-sm text-white/60 sm:text-base">
-            Upload products, manage stock, hide products, and delete products
-            from the database.
+            Upload phones, powerbanks, audio devices, laptops, furniture, books,
+            home essentials and general gadgets.
           </p>
         </div>
 
         <div className="mt-8 grid gap-8 lg:grid-cols-[0.8fr_1.2fr]">
-          {/* Upload Form */}
           <form
             onSubmit={uploadProduct}
             className="h-fit rounded-[2rem] bg-white p-5 shadow-sm sm:p-6"
           >
             <div className="mb-5 flex items-center gap-2">
               <PackagePlus size={22} className="text-[#FFA500]" />
+
               <h2 className="text-xl font-black text-black sm:text-2xl">
                 Upload Product
               </h2>
@@ -234,54 +290,63 @@ export default function AdminProductsPage() {
                 value={form.name}
                 onChange={(e) => updateField("name", e.target.value)}
                 placeholder="Product name"
-                className="w-full rounded-2xl border border-black/10 px-4 py-3 text-sm outline-none focus:border-[#FFA500]"
+                className="w-full rounded-2xl border border-black/10 px-4 py-3 text-sm text-black outline-none focus:border-[#FFA500]"
               />
 
               <textarea
                 value={form.description}
                 onChange={(e) => updateField("description", e.target.value)}
                 placeholder="Product description"
-                className="min-h-28 w-full rounded-2xl border border-black/10 px-4 py-3 text-sm outline-none focus:border-[#FFA500]"
+                className="min-h-28 w-full rounded-2xl border border-black/10 px-4 py-3 text-sm text-black outline-none focus:border-[#FFA500]"
               />
 
               <div className="grid gap-4 sm:grid-cols-2">
-                <input
+                <select
                   value={form.category}
                   onChange={(e) => updateField("category", e.target.value)}
-                  placeholder="Category"
-                  className="w-full rounded-2xl border border-black/10 px-4 py-3 text-sm outline-none focus:border-[#FFA500]"
-                />
+                  className="w-full rounded-2xl border border-black/10 bg-white px-4 py-3 text-sm font-semibold text-black outline-none focus:border-[#FFA500]"
+                >
+                  {PRODUCT_CATEGORIES.map((category) => (
+                    <option key={category} value={category}>
+                      {category}
+                    </option>
+                  ))}
+                </select>
 
                 <select
                   value={form.condition}
                   onChange={(e) => updateField("condition", e.target.value)}
-                  className="w-full rounded-2xl border border-black/10 bg-white px-4 py-3 text-sm outline-none focus:border-[#FFA500]"
+                  className="w-full rounded-2xl border border-black/10 bg-white px-4 py-3 text-sm font-semibold text-black outline-none focus:border-[#FFA500]"
                 >
-                  <option value="new">New</option>
-                  <option value="used">Used</option>
-                  <option value="fairly_used">Fairly Used</option>
+                  {PRODUCT_CONDITIONS.map((condition) => (
+                    <option key={condition.value} value={condition.value}>
+                      {condition.label}
+                    </option>
+                  ))}
                 </select>
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <input
                   type="number"
+                  min="1"
                   value={form.price}
                   onChange={(e) => updateField("price", e.target.value)}
                   placeholder="Price ₦"
-                  className="w-full rounded-2xl border border-black/10 px-4 py-3 text-sm outline-none focus:border-[#FFA500]"
+                  className="w-full rounded-2xl border border-black/10 px-4 py-3 text-sm text-black outline-none focus:border-[#FFA500]"
                 />
 
                 <input
                   type="number"
+                  min="0"
                   value={form.stock}
                   onChange={(e) => updateField("stock", e.target.value)}
                   placeholder="Stock"
-                  className="w-full rounded-2xl border border-black/10 px-4 py-3 text-sm outline-none focus:border-[#FFA500]"
+                  className="w-full rounded-2xl border border-black/10 px-4 py-3 text-sm text-black outline-none focus:border-[#FFA500]"
                 />
               </div>
 
-              <label className="flex items-center gap-3 rounded-2xl bg-[#FFC107]/20 p-4 text-sm font-bold text-black cursor-pointer select-none">
+              <label className="flex cursor-pointer select-none items-center gap-3 rounded-2xl bg-[#FFC107]/20 p-4 text-sm font-bold text-black">
                 <input
                   type="checkbox"
                   checked={form.isActive}
@@ -292,7 +357,10 @@ export default function AdminProductsPage() {
               </label>
 
               <div className="grid gap-2">
-                <p className="text-xs font-bold text-black/50">Upload Images (Max 5)</p>
+                <p className="text-xs font-bold text-black/50">
+                  Upload Images (Max 5)
+                </p>
+
                 <input
                   type="file"
                   accept="image/*"
@@ -302,7 +370,7 @@ export default function AdminProductsPage() {
                 />
               </div>
 
-              {previews.length > 0 && (
+              {previews.length > 0 ? (
                 <div className="grid grid-cols-3 gap-3">
                   {previews.map((src, index) => (
                     <div key={src} className="group relative h-20 w-full sm:h-24">
@@ -311,6 +379,7 @@ export default function AdminProductsPage() {
                         alt="Preview"
                         className="h-full w-full rounded-2xl object-cover"
                       />
+
                       <button
                         type="button"
                         onClick={() => removeSelectedImage(index)}
@@ -322,20 +391,19 @@ export default function AdminProductsPage() {
                     </div>
                   ))}
                 </div>
-              )}
+              ) : null}
 
               <button
                 type="submit"
                 disabled={submitting}
-                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#FFA500] px-5 py-4 font-black text-black hover:bg-[#FFC107] disabled:opacity-60 transition-colors"
+                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#FFA500] px-5 py-4 font-black text-black transition-colors hover:bg-[#FFC107] disabled:opacity-60"
               >
-                {submitting && <Loader2 className="animate-spin" size={18} />}
+                {submitting ? <Loader2 className="animate-spin" size={18} /> : null}
                 {submitting ? "Uploading..." : "Upload Product"}
               </button>
             </div>
           </form>
 
-          {/* Listings Panel */}
           <section className="rounded-[2rem] bg-white p-5 shadow-sm sm:p-6">
             <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <h2 className="text-xl font-black text-black sm:text-2xl">
@@ -345,7 +413,7 @@ export default function AdminProductsPage() {
               <button
                 type="button"
                 onClick={loadProducts}
-                className="flex w-fit items-center gap-2 rounded-full border border-black/10 px-4 py-2 text-sm font-bold text-black hover:bg-black hover:text-white transition-all"
+                className="flex w-fit items-center gap-2 rounded-full border border-black/10 px-4 py-2 text-sm font-bold text-black transition-all hover:bg-black hover:text-white"
               >
                 <RefreshCw size={16} />
                 Refresh
@@ -363,10 +431,7 @@ export default function AdminProductsPage() {
             ) : (
               <div className="space-y-4">
                 {products.map((product) => {
-                  const image =
-                    product.images?.[0]?.url ||
-                    product.images?.[0] ||
-                    "/placeholder.png";
+                  const image = product.images?.[0] || "/placeholder.png";
 
                   return (
                     <div
@@ -385,7 +450,11 @@ export default function AdminProductsPage() {
                         <div>
                           <div className="flex flex-wrap items-center gap-2">
                             <span className="rounded-full bg-black px-2.5 py-0.5 text-[10px] font-black uppercase text-white">
-                              {product.category}
+                              {product.category || "Gadget"}
+                            </span>
+
+                            <span className="rounded-full bg-[#FFC107]/20 px-2.5 py-0.5 text-[10px] font-black uppercase text-black">
+                              {formatCondition(product.condition || "new")}
                             </span>
 
                             <span
@@ -418,7 +487,7 @@ export default function AdminProductsPage() {
                         <button
                           type="button"
                           onClick={() => toggleProduct(product)}
-                          className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-black/10 px-4 py-3 text-xs font-black text-black hover:bg-black hover:text-white transition-all md:flex-none"
+                          className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-black/10 px-4 py-3 text-xs font-black text-black transition-all hover:bg-black hover:text-white md:flex-none"
                         >
                           {product.isActive ? (
                             <>
@@ -436,7 +505,7 @@ export default function AdminProductsPage() {
                         <button
                           type="button"
                           onClick={() => deleteProduct(product._id)}
-                          className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-red-600 px-4 py-3 text-xs font-black text-white hover:bg-red-700 transition-all md:flex-none"
+                          className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-red-600 px-4 py-3 text-xs font-black text-white transition-all hover:bg-red-700 md:flex-none"
                         >
                           <Trash2 size={14} />
                           Delete

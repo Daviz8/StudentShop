@@ -251,6 +251,7 @@ export default function SellItemForm() {
     setLoadingText("Sending your request...");
 
     try {
+
       const formData = new FormData();
 
       Object.entries(form).forEach(([key, value]) => {
@@ -269,6 +270,16 @@ export default function SellItemForm() {
       });
 
       const data = await res.json();
+    
+
+ if (res.ok || data.success) {
+   const mail =  await fetch("/api/mail", {
+        method: "POST",
+      });
+        const mailSent = await mail.json()
+        console.log("MAIL SENT TO ADMIN:", mailSent);
+        return;
+      }
 
       if (!res.ok || !data.success) {
         console.error("SUBMISSION_ERROR:", data);
