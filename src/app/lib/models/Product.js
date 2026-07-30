@@ -6,9 +6,8 @@ export const PRODUCT_CATEGORIES = [
   "Powerbanks",
   "Audio",
   "Laptops",
-  "Furniture",
   "Home Essentials",
-  "Books",
+  "Accessories",
 ];
 
 export const PRODUCT_CONDITIONS = ["new", "used", "fairly_used"];
