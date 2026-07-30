@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import {
   Armchair,
   BatteryCharging,
-  BookOpen,
   Building2,
   Grid3X3,
   Headphones,
@@ -16,6 +15,7 @@ import {
   ShoppingCart,
   Smartphone,
   Zap,
+  ToolCaseIcon
 } from "lucide-react";
 
 const categories = [
@@ -49,20 +49,16 @@ const categories = [
     value: "Laptops",
     icon: Laptop,
   },
-  {
-    label: "Furniture",
-    value: "Furniture",
-    icon: Armchair,
-  },
+ 
   {
     label: "Home Essentials",
     value: "Home Essentials",
     icon: Home,
   },
   {
-    label: "Books",
-    value: "Books",
-    icon: BookOpen,
+    label: "Accessories",
+    value: "Accessories",
+    icon: ToolCaseIcon,
   },
   {
     label: "Properties",
