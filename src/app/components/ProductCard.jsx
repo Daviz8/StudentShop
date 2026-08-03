@@ -193,7 +193,7 @@ export default function ProductCard({ product, isAuthenticated }) {
                   <button
                     type="button"
                     onClick={() => setOpen(false)}
-                    className="rounded-2xl border border-black/10 px-5 py-4 font-black text-black hover:bg-black hover:text-white"
+                    className="rounded-2xl border border-black/10  px-3 py-2 font-black text-black hover:bg-black hover:text-white"
                   >
                     Close
                   </button>
@@ -202,9 +202,9 @@ export default function ProductCard({ product, isAuthenticated }) {
                     type="button"
                     onClick={addToCart}
                     disabled={product.stock < 1}
-                    className="flex items-center justify-center gap-2 rounded-2xl bg-[#FFA500] px-5 py-4 font-black text-black hover:bg-[#FFC107] disabled:opacity-50"
+                    className="flex items-center justify-center gap-2 rounded-2xl bg-[#FFA500] px-3 py-2 font-black text-black hover:bg-[#FFC107] disabled:opacity-50"
                   >
-                    <ShoppingCart size={18} />
+                    <ShoppingCart size={12} />
                     Add to Cart
                   </button>
                 </div>
