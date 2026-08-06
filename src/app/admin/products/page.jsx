@@ -14,7 +14,7 @@ import {
 const PRODUCT_CATEGORIES = [
  "Gadget",
   "Phones",
-  "Powerbanks",
+  "Home Appliances",
   "Audio",
   "Laptops",
   "Home Essentials",
@@ -266,7 +266,7 @@ export default function AdminProductsPage() {
           </h1>
 
           <p className="mt-3 max-w-2xl text-sm text-white/60 sm:text-base">
-            Upload phones, powerbanks, audio devices, laptops, furniture, books,
+            Upload phones, Home Appliances, audio devices, laptops, furniture, books,
             home essentials and general gadgets.
           </p>
         </div>

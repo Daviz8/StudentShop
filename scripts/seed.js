@@ -8,7 +8,7 @@ dotenv.config({ path: ".env.local" });
 const PRODUCT_CATEGORIES = [
   "Gadget",
   "Phones",
-  "Powerbanks",
+  "Home Appliances",
   "Audio",
   "Laptops",
   "Home Essentials",
@@ -280,7 +280,7 @@ async function seed() {
       {
         name: "Ldnio 50000mAh Power Bank",
         description: "Ultra-capacity backup battery built for long blackouts.",
-        category: "Powerbanks",
+        category: "Gadgets",
         condition: "new",
         price: 590000,
         stock: 2,
@@ -290,7 +290,7 @@ async function seed() {
       {
         name: "Test 50000mAh Power Bank",
         description: "Ultra-capacity backup battery station for testing checkout.",
-        category: "Powerbanks",
+        category: "Gadgets",
         condition: "new",
         price: 10,
         stock: 1,
