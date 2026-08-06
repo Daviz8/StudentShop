@@ -12,14 +12,13 @@ import {
 } from "lucide-react";
 
 const PRODUCT_CATEGORIES = [
-  "Gadget",
+ "Gadget",
   "Phones",
   "Powerbanks",
   "Audio",
   "Laptops",
-  "Furniture",
   "Home Essentials",
-  "Books",
+  "Accessories"
 ];
 
 const PRODUCT_CONDITIONS = [
