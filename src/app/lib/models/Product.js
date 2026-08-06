@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 export const PRODUCT_CATEGORIES = [
   "Gadget",
   "Phones",
-  "Powerbanks",
+  "Home Appliances",
   "Audio",
   "Laptops",
   "Home Essentials",

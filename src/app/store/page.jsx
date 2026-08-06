@@ -18,7 +18,7 @@ const categories = [
   { label: "Gadgets", value: "Gadget", icon: Zap },
   { label: "Accessories", value: "Accessories", icon: Wrench },
   { label: "Phones", value: "Phones", icon: Smartphone },
-  { label: "Powerbanks", value: "Powerbanks", icon: BatteryCharging },
+  { label: "Home Appliances", value: "Home Appliances", icon: BatteryCharging },
   { label: "Audio", value: "Audio", icon: Headphones },
   { label: "Laptops", value: "Laptops", icon: Laptop },
   { label: "Home Essentials", value: "Home Essentials", icon: Home },

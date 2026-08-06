@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 const PRODUCT_CATEGORIES = [
   "Gadget",
   "Phones",
-  "Powerbanks",
+  "Home Appliances",
   "Audio",
   "Laptops",
   "Furniture",
