@@ -14,9 +14,8 @@ const PRODUCT_CATEGORIES = [
   "Home Appliances",
   "Audio",
   "Laptops",
-  "Furniture",
   "Home Essentials",
-  "Books",
+  "Accessories",
 ];
 
 const PRODUCT_CONDITIONS = ["new", "used", "fairly_used"];

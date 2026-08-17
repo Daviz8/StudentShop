@@ -9,14 +9,13 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const PRODUCT_CATEGORIES = [
-  "Gadget",
+ "Gadget",
   "Phones",
   "Home Appliances",
   "Audio",
   "Laptops",
-  "Furniture",
   "Home Essentials",
-  "Books",
+  "Accessories",
 ];
 
 const PRODUCT_CONDITIONS = ["new", "used", "fairly_used"];
