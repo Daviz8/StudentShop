@@ -23,7 +23,7 @@ const montserrat = Montserrat({
 export const metadata = {
   title: "Student Shop Nigeria",
   description:
-    "Buy and sell items with live stock tracking and secure checkout",
+    "Buy, sell, swap, and repair student essentials at fair prices. Student Shop Nigeria helps you get what you need with the little you have.",
 };
 
 export default function RootLayout({ children }) {
